@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Runtime;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using Newtonsoft.Json;
@@ -260,7 +261,7 @@ namespace PyLibSharp.Requests
 
     public class Requests
     {
-        public static ReqResponse Get(string Url, ReqParams Params = null)
+        public static async Task<ReqResponse> Get(string Url, ReqParams Params = null)
         {
             return await RequestBase(Url, "GET", Params);
         }
@@ -270,7 +271,7 @@ namespace PyLibSharp.Requests
             return await RequestBase(Url, "POST", Params);
         }
 
-        private static async Task<ReqResponse> RequestBase(string Url, string Method, ReqParams Params = null)
+        public static async Task<ReqResponse> RequestBase(string Url, string Method, ReqParams Params = null)
         {
             if (string.IsNullOrEmpty(Url))
             {
@@ -485,7 +486,7 @@ namespace PyLibSharp.Requests
             {
                 request.CookieContainer = Params.Cookies;
                 HttpWebResponse response = (HttpWebResponse) (await request.GetResponseAsync());
-                Task.Run<ReqResponse>((Func<Task<ReqResponse>>) (() => { return new ReqResponse(); }));
+               
                 if (Params.IsThrowErrorForStatusCode && response.StatusCode != HttpStatusCode.OK               &&
                     response.StatusCode                                     != HttpStatusCode.Accepted         &&
                     response.StatusCode                                     != HttpStatusCode.Continue         &&
