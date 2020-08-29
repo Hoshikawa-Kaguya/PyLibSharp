@@ -261,12 +261,21 @@ namespace PyLibSharp.Requests
 
     public class Requests
     {
-        public static async Task<ReqResponse> Get(string Url, ReqParams Params = null)
+        public static ReqResponse Get(string Url, ReqParams Params = null)
+        {
+            return RequestBase(Url, "GET", Params).Result;
+        }
+
+        public static ReqResponse Post(string Url, ReqParams Params = null)
+        {
+            return RequestBase(Url, "POST", Params).Result;
+        }
+        public static async Task<ReqResponse> GetAsync(string Url, ReqParams Params = null)
         {
             return await RequestBase(Url, "GET", Params);
         }
 
-        public static async Task<ReqResponse> Post(string Url, ReqParams Params = null)
+        public static async Task<ReqResponse> PostAsync(string Url, ReqParams Params = null)
         {
             return await RequestBase(Url, "POST", Params);
         }
