@@ -83,7 +83,7 @@ namespace PyLibSharp.Requests
 
         public string ContentType { get; }
 
-        public Encoding       Encode     { get; }
+        public Encoding       Encode     { get; set; }
         public HttpStatusCode StatusCode { get; }
 
         public ReqResponse(MemoryStream rawStream, CookieContainer cookies, string contentType, Encoding encode,
@@ -261,26 +261,57 @@ namespace PyLibSharp.Requests
 
     public class Requests
     {
-        public static ReqResponse Get(string Url, ReqParams Params = null)
+        public static ReqResponse Get(string Url)
         {
-            return RequestBase(Url, "GET", Params).Result;
+            return RequestBase(Url, "GET", null,new CancellationTokenSource()).Result;
+        }
+        public static ReqResponse Get(string Url, ReqParams Params)
+        {
+            return RequestBase(Url, "GET", Params,new CancellationTokenSource()).Result;
+        }
+        public static ReqResponse Get(string Url, ReqParams Params,CancellationTokenSource CancelFlag)
+        {
+            return RequestBase(Url, "GET", Params, CancelFlag).Result;
+        }
+        public static ReqResponse Post(string Url)
+        {
+            return RequestBase(Url, "POST", null, new CancellationTokenSource()).Result;
+        }
+        public static ReqResponse Post(string Url, ReqParams Params)
+        {
+            return RequestBase(Url, "POST", Params, new CancellationTokenSource()).Result;
+        }
+        public static ReqResponse Post(string Url, ReqParams Params, CancellationTokenSource CancelFlag)
+        {
+            return RequestBase(Url, "POST", Params, CancelFlag).Result;
         }
 
-        public static ReqResponse Post(string Url, ReqParams Params = null)
+        public static async Task<ReqResponse> GetAsync(string Url)
         {
-            return RequestBase(Url, "POST", Params).Result;
+            return await RequestBase(Url, "GET", null, new CancellationTokenSource());
         }
-        public static async Task<ReqResponse> GetAsync(string Url, ReqParams Params = null)
+        public static async Task<ReqResponse> GetAsync(string Url, ReqParams Params)
         {
-            return await RequestBase(Url, "GET", Params);
+            return await RequestBase(Url, "GET", Params, new CancellationTokenSource());
+        }
+        public static async Task<ReqResponse> GetAsync(string Url, ReqParams Params, CancellationTokenSource CancelFlag)
+        {
+            return await RequestBase(Url, "GET", Params, CancelFlag);
+        }
+        public static async Task<ReqResponse> PostAsync(string Url)
+        {
+            return await RequestBase(Url, "POST", null, new CancellationTokenSource());
+        }
+        public static async Task<ReqResponse> PostAsync(string Url, ReqParams Params)
+        {
+            return await RequestBase(Url, "POST", Params, new CancellationTokenSource());
+        }
+        public static async Task<ReqResponse> PostAsync(string Url, ReqParams Params, CancellationTokenSource CancelFlag)
+        {
+            return await RequestBase(Url, "POST", Params, CancelFlag);
         }
 
-        public static async Task<ReqResponse> PostAsync(string Url, ReqParams Params = null)
-        {
-            return await RequestBase(Url, "POST", Params);
-        }
-
-        public static async Task<ReqResponse> RequestBase(string Url, string Method, ReqParams Params = null)
+        public static async Task<ReqResponse> RequestBase(string Url, string Method, ReqParams Params, CancellationTokenSource CancelFlag)
         {
             if (string.IsNullOrEmpty(Url))
             {
@@ -329,12 +360,25 @@ namespace PyLibSharp.Requests
                 if (Method == "GET")
                 {
                     var urlParsed = Url.Contains("?") ? Url.Split('?')[0] : Url;
-                    paramStr = (urlToSend.Query.StartsWith("?") ? urlToSend.Query : "?" + urlToSend.Query) +
-                               (urlToSend.Query.EndsWith("&")
-                                   ? ""
-                                   : ((urlToSend.Query != "" && urlToSend.Query != "?" && paramStr != "") ? "&" : ""))
-                             + paramStr;
-                    urlParsed += ((urlToSend.AbsolutePath == "/" && !Url.EndsWith("/")) ? "/" : "") + paramStr;
+                    if (paramStr == "")
+                    {
+                        if (Url.Contains("?"))
+                        {
+                            urlParsed += Url.Split('?')[1];
+                        }
+                    }
+                    else
+                    {
+                        paramStr = (urlToSend.Query.StartsWith("?") ? urlToSend.Query : "?" + urlToSend.Query) +
+                                   (urlToSend.Query.EndsWith("&")
+                                       ? ""
+                                       : ((urlToSend.Query != "" && urlToSend.Query != "?" && paramStr != "")
+                                           ? "&"
+                                           : ""))
+                                 + paramStr;
+                        urlParsed += ((urlToSend.AbsolutePath == "/" && !Url.EndsWith("/")) ? "/" : "") + paramStr;
+                    }
+
                     request   =  (HttpWebRequest) WebRequest.Create(urlParsed);
                 }
                 else
@@ -494,8 +538,18 @@ namespace PyLibSharp.Requests
             try
             {
                 request.CookieContainer = Params.Cookies;
-                HttpWebResponse response = (HttpWebResponse) (await request.GetResponseAsync());
-               
+                Task<WebResponse> responseTask = request.GetResponseAsync(CancelFlag.Token);
+
+                if (CancelFlag.IsCancellationRequested)
+                {
+                    return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
+                }else if (await Task.WhenAny(responseTask,Task.Delay(Params.Timeout))!= responseTask)
+                {
+                    return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
+                }
+
+
+                HttpWebResponse response = (HttpWebResponse)responseTask.Result;
                 if (Params.IsThrowErrorForStatusCode && response.StatusCode != HttpStatusCode.OK               &&
                     response.StatusCode                                     != HttpStatusCode.Accepted         &&
                     response.StatusCode                                     != HttpStatusCode.Continue         &&
@@ -516,6 +570,7 @@ namespace PyLibSharp.Requests
                 }
 
                 myResponseStream = response.GetResponseStream();
+
                 // myStreamReader =
                 //     new StreamReader(myResponseStream ?? throw new ReqResponseException("请求无响应"),
                 //                      Encoding.GetEncoding(response.CharacterSet ??
