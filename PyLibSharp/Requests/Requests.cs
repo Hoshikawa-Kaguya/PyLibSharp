@@ -16,23 +16,22 @@ namespace PyLibSharp.Requests
 {
     public class ReqParams
     {
-        public Dictionary<HttpRequestHeader, string> Header                    { get; set; } = new Dictionary<HttpRequestHeader, string>();
-        public WebProxy                              ProxyToUse                { get; set; }
-        public CookieContainer                       Cookies                   { get; set; } = new CookieContainer();
-        public Dictionary<string, string>            CustomHeader              { get; set; } = new Dictionary<string, string>();
-        public Dictionary<string, string>            Params                    { get; set; } = new Dictionary<string, string>();
-        public byte[]                                PostRawData               { get; set; }
-        public object                                PostJson                  { get; set; }
-        public MultipartFormDataContent              PostMultiPart             { get; set; }
-        public Encoding                              PostEncoding              { get; set; } = new System.Text.UTF8Encoding(false);
-        public PostType                              PostParamsType            { get; set; } = PostType.none;
-        public bool                                  UseHandler                { get; set; } = false;
-        public bool                                  IsStream                  { get; set; } = false;
-        public bool                                  IsUseHtmlMetaEncoding     { get; set; } = true;
+        public Dictionary<HttpRequestHeader, string> Header { get; set; } = new Dictionary<HttpRequestHeader, string>();
+        public WebProxy                              ProxyToUse { get; set; }
+        public CookieContainer                       Cookies { get; set; } = new CookieContainer();
+        public Dictionary<string, string>            CustomHeader { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, string>            Params { get; set; } = new Dictionary<string, string>();
+        public byte[]                                PostRawData { get; set; }
+        public object                                PostJson { get; set; }
+        public MultipartFormDataContent              PostMultiPart { get; set; }
+        public Encoding                              PostEncoding { get; set; } = new System.Text.UTF8Encoding(false);
+        public PostType                              PostParamsType { get; set; } = PostType.none;
+        public bool                                  UseHandler { get; set; } = false;
+        public bool                                  IsStream { get; set; } = false;
+        public bool                                  IsUseHtmlMetaEncoding { get; set; } = true;
         public bool                                  IsThrowErrorForStatusCode { get; set; } = true;
-        public int                                   Timeout                   { get; set; } = 500;
-        public int                                   ReadBufferSize            { get; set; } = 1024;
-
+        public int                                   Timeout { get; set; } = 500;
+        public int                                   ReadBufferSize { get; set; } = 1024;
     }
 
     public enum PostType
@@ -623,14 +622,14 @@ namespace PyLibSharp.Requests
                         byte[] jsonData;
                         if (Params.PostJson is string json)
                         {
-                            jsonData= Params.PostEncoding.GetBytes(json);
+                            jsonData = Params.PostEncoding.GetBytes(json);
                         }
                         else
                         {
                             jsonData = Params.PostEncoding.GetBytes(JsonConvert.SerializeObject(Params.PostJson));
                         }
 
-                        
+
                         using (Stream stream = request.GetRequestStream())
                         {
                             await stream.WriteAsync(jsonData, 0, jsonData.Length);
