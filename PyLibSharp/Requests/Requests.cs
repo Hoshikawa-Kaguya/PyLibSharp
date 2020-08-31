@@ -24,7 +24,7 @@ namespace PyLibSharp.Requests
         public CookieContainer                       Cookies                   { get; set; }
         public Dictionary<string, string>            CustomHeader              { get; set; }
         public Dictionary<string, string>            Params                    { get; set; }
-        public byte[]                                RawPostParams             { get; set; }
+        public byte[]                                PostRawData             { get; set; }
         public string                                PostJson                  { get; set; }
         public MultipartFormDataContent              PostMultiPart             { get; set; }
         public Encoding                              PostEncoding              { get; set; }
@@ -42,7 +42,7 @@ namespace PyLibSharp.Requests
             CustomHeader              = new Dictionary<string, string>();
             Params                    = new Dictionary<string, string>();
             IsStream                  = false;
-            IsUseHtmlMetaEncoding     = false;
+            IsUseHtmlMetaEncoding     = true;
             IsThrowErrorForStatusCode = true;
             PostEncoding              = new System.Text.UTF8Encoding(false);
             PostParamsType            = PostType.none;
@@ -263,24 +263,29 @@ namespace PyLibSharp.Requests
     {
         public static ReqResponse Get(string Url)
         {
-            return RequestBase(Url, "GET", null,new CancellationTokenSource()).Result;
+            return RequestBase(Url, "GET", null, new CancellationTokenSource()).Result;
         }
+
         public static ReqResponse Get(string Url, ReqParams Params)
         {
-            return RequestBase(Url, "GET", Params,new CancellationTokenSource()).Result;
+            return RequestBase(Url, "GET", Params, new CancellationTokenSource()).Result;
         }
-        public static ReqResponse Get(string Url, ReqParams Params,CancellationTokenSource CancelFlag)
+
+        public static ReqResponse Get(string Url, ReqParams Params, CancellationTokenSource CancelFlag)
         {
             return RequestBase(Url, "GET", Params, CancelFlag).Result;
         }
+
         public static ReqResponse Post(string Url)
         {
             return RequestBase(Url, "POST", null, new CancellationTokenSource()).Result;
         }
+
         public static ReqResponse Post(string Url, ReqParams Params)
         {
             return RequestBase(Url, "POST", Params, new CancellationTokenSource()).Result;
         }
+
         public static ReqResponse Post(string Url, ReqParams Params, CancellationTokenSource CancelFlag)
         {
             return RequestBase(Url, "POST", Params, CancelFlag).Result;
@@ -290,28 +295,35 @@ namespace PyLibSharp.Requests
         {
             return await RequestBase(Url, "GET", null, new CancellationTokenSource());
         }
+
         public static async Task<ReqResponse> GetAsync(string Url, ReqParams Params)
         {
             return await RequestBase(Url, "GET", Params, new CancellationTokenSource());
         }
+
         public static async Task<ReqResponse> GetAsync(string Url, ReqParams Params, CancellationTokenSource CancelFlag)
         {
             return await RequestBase(Url, "GET", Params, CancelFlag);
         }
+
         public static async Task<ReqResponse> PostAsync(string Url)
         {
             return await RequestBase(Url, "POST", null, new CancellationTokenSource());
         }
+
         public static async Task<ReqResponse> PostAsync(string Url, ReqParams Params)
         {
             return await RequestBase(Url, "POST", Params, new CancellationTokenSource());
         }
-        public static async Task<ReqResponse> PostAsync(string Url, ReqParams Params, CancellationTokenSource CancelFlag)
+
+        public static async Task<ReqResponse> PostAsync(string Url, ReqParams Params,
+                                                        CancellationTokenSource CancelFlag)
         {
             return await RequestBase(Url, "POST", Params, CancelFlag);
         }
 
-        public static async Task<ReqResponse> RequestBase(string Url, string Method, ReqParams Params, CancellationTokenSource CancelFlag)
+        public static async Task<ReqResponse> RequestBase(string Url, string Method, ReqParams Params,
+                                                          CancellationTokenSource CancelFlag)
         {
             if (string.IsNullOrEmpty(Url))
             {
@@ -341,7 +353,7 @@ namespace PyLibSharp.Requests
                     Params.PostParamsType = PostType.json;
                 }
 
-                if (Params.RawPostParams != null && Params.RawPostParams.Length != 0)
+                if (Params.PostRawData != null && Params.PostRawData.Length != 0)
                 {
                     Params.PostParamsType = PostType.raw;
                 }
@@ -379,7 +391,7 @@ namespace PyLibSharp.Requests
                         urlParsed += ((urlToSend.AbsolutePath == "/" && !Url.EndsWith("/")) ? "/" : "") + paramStr;
                     }
 
-                    request   =  (HttpWebRequest) WebRequest.Create(urlParsed);
+                    request = (HttpWebRequest) WebRequest.Create(urlParsed);
                 }
                 else
                 {
@@ -398,6 +410,19 @@ namespace PyLibSharp.Requests
             try
             {
                 //头部处理部分
+                //默认头部添加
+                if (!Params.Header.ContainsKey(HttpRequestHeader.AcceptLanguage))
+                {
+                    Params.Header.Add(HttpRequestHeader.AcceptLanguage,"zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6");
+                }
+                if (!Params.Header.ContainsKey(HttpRequestHeader.UserAgent))
+                {
+                    Params.Header.Add(HttpRequestHeader.UserAgent, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36 Edg/85.0.564.41");
+                }
+                if (!Params.Header.ContainsKey(HttpRequestHeader.Accept))
+                {
+                    Params.Header.Add(HttpRequestHeader.Accept, "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+                }
                 foreach (KeyValuePair<HttpRequestHeader, string> header in Params.Header)
                 {
                     switch (header.Key)
@@ -464,6 +489,7 @@ namespace PyLibSharp.Requests
             string          responseContentType     = "";
             CookieContainer responseCookieContainer = new CookieContainer();
 
+            //POST 数据写入
             if (Method == "POST" || Method == "PUT")
             {
                 switch (Params.PostParamsType)
@@ -473,7 +499,7 @@ namespace PyLibSharp.Requests
                         {
                             throw new
                                 ReqRequestException("以 application/x-www-form-urlencoded 类型 POST 时，Params 参数未设置或为空",
-                                                    new ArgumentNullException("Params"));
+                                                    new ArgumentNullException(nameof(Params)));
                         }
 
                         request.ContentType =
@@ -481,7 +507,7 @@ namespace PyLibSharp.Requests
                         byte[] data = Params.PostEncoding.GetBytes(paramStr.ToString());
                         using (Stream stream = request.GetRequestStream())
                         {
-                            stream.Write(data, 0, data.Length);
+                            await stream.WriteAsync(data, 0, data.Length);
                         }
 
                         break;
@@ -499,20 +525,20 @@ namespace PyLibSharp.Requests
 
                         using (Stream stream = request.GetRequestStream())
                         {
-                            stream.Write(task.Result, 0, task.Result.Length);
+                            await stream.WriteAsync(task.Result, 0, task.Result.Length);
                         }
 
                         break;
                     case PostType.raw:
-                        if (Params.RawPostParams is null || Params.RawPostParams.Length == 0)
+                        if (Params.PostRawData is null || Params.PostRawData.Length == 0)
                         {
-                            throw new ReqRequestException("以 Raw 类型 POST 时，RawPostParams 参数未设置或为空",
+                            throw new ReqRequestException("以 Raw 类型 POST 时，PostRawData 参数未设置或为空",
                                                           new ArgumentNullException("RawPostParams"));
                         }
 
                         using (Stream stream = request.GetRequestStream())
                         {
-                            stream.Write(Params.RawPostParams, 0, Params.RawPostParams.Length);
+                            await stream.WriteAsync(Params.PostRawData, 0, Params.PostRawData.Length);
                         }
 
                         break;
@@ -527,7 +553,7 @@ namespace PyLibSharp.Requests
                         byte[] jsonData = Params.PostEncoding.GetBytes(Params.PostJson.ToString());
                         using (Stream stream = request.GetRequestStream())
                         {
-                            stream.Write(jsonData, 0, jsonData.Length);
+                            await stream.WriteAsync(jsonData, 0, jsonData.Length);
                         }
 
                         break;
@@ -538,18 +564,21 @@ namespace PyLibSharp.Requests
             try
             {
                 request.CookieContainer = Params.Cookies;
-                Task<WebResponse> responseTask = request.GetResponseAsync(CancelFlag.Token);
 
+                //开始异步请求
+                Task<WebResponse> responseTask = request.GetResponseAsync(CancelFlag.Token);
+                //如果取消
                 if (CancelFlag.IsCancellationRequested)
                 {
                     return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
-                }else if (await Task.WhenAny(responseTask,Task.Delay(Params.Timeout))!= responseTask)
+                }
+                else if (await Task.WhenAny(responseTask, Task.Delay(Params.Timeout)) != responseTask)
                 {
                     return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
                 }
 
-
-                HttpWebResponse response = (HttpWebResponse)responseTask.Result;
+                //异步请求结果
+                HttpWebResponse response = (HttpWebResponse) responseTask.Result;
                 if (Params.IsThrowErrorForStatusCode && response.StatusCode != HttpStatusCode.OK               &&
                     response.StatusCode                                     != HttpStatusCode.Accepted         &&
                     response.StatusCode                                     != HttpStatusCode.Continue         &&
@@ -569,6 +598,7 @@ namespace PyLibSharp.Requests
                     throw new ReqRequestException("HTTP 状态码指示请求发生错误，状态码为：" + response.StatusCode);
                 }
 
+                //获取响应流
                 myResponseStream = response.GetResponseStream();
 
                 // myStreamReader =
@@ -576,36 +606,32 @@ namespace PyLibSharp.Requests
                 //                      Encoding.GetEncoding(response.CharacterSet ??
                 //                                           throw new ReqResponseException("请求无响应")));
                 //
-
+                //流转储
                 byte[] buffer = new byte[bufferSize];
                 int count =
-                    (myResponseStream ?? throw new ReqResponseException("请求无响应")).Read(buffer, 0, bufferSize);
+                    await (myResponseStream ?? throw new ReqResponseException("请求无响应")).ReadAsync(buffer, 0, bufferSize);
                 while (count > 0)
                 {
                     responseStream.Write(buffer, 0, count);
-                    count = myResponseStream.Read(buffer, 0, bufferSize);
+                    count = await myResponseStream.ReadAsync(buffer, 0, bufferSize);
                 }
 
-                if (response.CharacterSet != "")
+                //编码自动判断
+                if (response.ContentEncoding != "")
+                {
+                    responseEncoding = Encoding.GetEncoding(response.ContentEncoding);
+                }
+                else if (response.CharacterSet != "" && response.ContentType.Contains("charset"))
                 {
                     responseEncoding = Encoding.GetEncoding(response.CharacterSet ??
                                                             throw new ReqResponseException("请求无响应"));
                 }
-                else if (response.ContentEncoding != "")
-                {
-                    responseEncoding = Encoding.GetEncoding(response.ContentEncoding);
-                }
                 else
                 {
-                    responseEncoding = Encoding.Default;
+                    responseEncoding = Encoding.UTF8;
                 }
-
-                responseStatusCode  = response.StatusCode;
-                responseContentType = response.ContentType;
-                responseCookieContainer.Add(response.Cookies);
-
                 //通过HTML头部的Meta判断编码
-                if (Params.IsUseHtmlMetaEncoding && response.ContentType.ToLower().IndexOf("text/html") != -1)
+                if (Params.IsUseHtmlMetaEncoding && response.ContentType.ToLower().IndexOf("text/html", StringComparison.Ordinal) != -1)
                 {
                     var CharSetMatch =
                         Regex.Match(responseEncoding.GetString(responseStream.ToArray()),
@@ -617,17 +643,25 @@ namespace PyLibSharp.Requests
                         responseEncoding = Encoding.GetEncoding(overrideCharset);
                     }
                 }
+
+                //属性添加
+                responseStatusCode  = response.StatusCode;
+                responseContentType = response.ContentType;
+                responseCookieContainer.Add(response.Cookies);
+
+
             }
             catch (Exception ex)
             {
                 throw new ReqResponseException("请求时发生错误", ex);
             }
-            finally
-            {
-                //myStreamReader?.Close();
-                myResponseStream?.Close();
-            }
-
+            //使用Finally将会导致不弹出错误
+            // finally
+            // {
+            //     //myStreamReader?.Close();
+            //     myResponseStream?.Close();
+            // }
+            myResponseStream?.Close();
             return new ReqResponse(responseStream, responseCookieContainer, responseContentType, responseEncoding,
                                    responseStatusCode);
         }
