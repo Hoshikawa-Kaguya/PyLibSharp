@@ -8,14 +8,14 @@
 
 Use. Net to encapsulate some common functions according to the design idea of some Python libraries</Description>
     <Authors>xiaohe321</Authors>
-    <Version>1.1.1</Version>
+    <Version>1.1.2</Version>
     <Company />
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/xh321/PyLibSharp</PackageProjectUrl>
     <RepositoryUrl></RepositoryUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <NeutralLanguage>zh-CN</NeutralLanguage>
-    <PackageReleaseNotes>完善</PackageReleaseNotes>
+    <PackageReleaseNotes>紧急修复上一版中Get不带参数报空引用的bug</PackageReleaseNotes>
     <PackageTags>request network</PackageTags>
   </PropertyGroup>
 

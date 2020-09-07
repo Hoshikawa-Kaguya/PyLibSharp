@@ -254,7 +254,7 @@ namespace PyLibSharp.Requests
 
         public static ReqResponse Get(string Url)
         {
-            return RequestBase(Url, "GET", null, new CancellationTokenSource()).Result;
+            return RequestBase(Url, "GET", new ReqParams(), new CancellationTokenSource()).Result;
         }
 
         public static ReqResponse Get(string Url, ReqParams Params)
@@ -269,7 +269,7 @@ namespace PyLibSharp.Requests
 
         public static ReqResponse Post(string Url)
         {
-            return RequestBase(Url, "POST", null, new CancellationTokenSource()).Result;
+            return RequestBase(Url, "POST", new ReqParams(), new CancellationTokenSource()).Result;
         }
 
         public static ReqResponse Post(string Url, ReqParams Params)
@@ -284,7 +284,7 @@ namespace PyLibSharp.Requests
 
         public static async Task<ReqResponse> GetAsync(string Url)
         {
-            return await RequestBase(Url, "GET", null, new CancellationTokenSource());
+            return await RequestBase(Url, "GET", new ReqParams(), new CancellationTokenSource());
         }
 
         public static async Task<ReqResponse> GetAsync(string Url, ReqParams Params)
@@ -299,7 +299,7 @@ namespace PyLibSharp.Requests
 
         public static async Task<ReqResponse> PostAsync(string Url)
         {
-            return await RequestBase(Url, "POST", null, new CancellationTokenSource());
+            return await RequestBase(Url, "POST", new ReqParams(), new CancellationTokenSource());
         }
 
         public static async Task<ReqResponse> PostAsync(string Url, ReqParams Params)
