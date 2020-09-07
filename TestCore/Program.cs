@@ -1,5 +1,5 @@
-﻿using System;
-using PyLibSharp.Requests;
+﻿using PyLibSharp.Requests;
+using System;
 
 namespace TestCore
 {
@@ -7,8 +7,7 @@ namespace TestCore
     {
         static void Main(string[] args)
         {
-            
-            Console.WriteLine("Hello World!");
+            Console.WriteLine(Requests.Get("http://www.baidu.com", new ReqParams()));
         }
     }
 }

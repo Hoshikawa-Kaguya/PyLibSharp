@@ -259,7 +259,7 @@ namespace PyLibSharp.Requests
 
         public static ReqResponse Get(string Url, ReqParams Params)
         {
-            return RequestBase(Url, "GET", Params, new CancellationTokenSource()).Result;
+           return RequestBase(Url, "GET", Params, new CancellationTokenSource()).Result;
         }
 
         public static ReqResponse Get(string Url, ReqParams Params, CancellationTokenSource CancelFlag)
@@ -658,6 +658,10 @@ namespace PyLibSharp.Requests
 
                 //异步请求结果
                 HttpWebResponse response = (HttpWebResponse) responseTask.Result;
+                if (responseTask.IsFaulted)
+                {
+                    throw responseTask.Exception;
+                }
                 if (Params.IsThrowErrorForStatusCode && response.StatusCode != HttpStatusCode.OK               &&
                     response.StatusCode                                     != HttpStatusCode.Accepted         &&
                     response.StatusCode                                     != HttpStatusCode.Continue         &&
@@ -708,11 +712,11 @@ namespace PyLibSharp.Requests
                 }
 
                 //编码自动判断
-                if (response.ContentEncoding != "")
+                if (response.ContentEncoding != ""&&!(response.ContentEncoding is null))
                 {
                     responseEncoding = Encoding.GetEncoding(response.ContentEncoding);
                 }
-                else if (response.CharacterSet != "" && response.ContentType.Contains("charset"))
+                else if (response.CharacterSet != "" && !(response.CharacterSet is null) && response.ContentType.Contains("charset"))
                 {
                     responseEncoding = Encoding.GetEncoding(response.CharacterSet ??
                                                             throw new ReqResponseException("请求无响应"));
