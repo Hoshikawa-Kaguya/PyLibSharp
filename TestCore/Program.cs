@@ -7,7 +7,7 @@ namespace TestCore
     {
         static void Main(string[] args)
         {
-            Console.WriteLine(Requests.Get("http://www.baidu.com", new ReqParams()));
+            Console.WriteLine(Requests.Get("https://www.qq.com"));
         }
     }
 }

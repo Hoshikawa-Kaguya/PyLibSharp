@@ -316,6 +316,8 @@ namespace PyLibSharp.Requests
         public static async Task<ReqResponse> RequestBase(string Url, string Method, ReqParams Params,
                                                           CancellationTokenSource CancelFlag)
         {
+            //不能直接使用GB2312，必须先注册
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
             if (string.IsNullOrEmpty(Url))
             {
                 throw new ArgumentNullException(nameof(Url));
@@ -714,11 +716,11 @@ namespace PyLibSharp.Requests
                 //编码自动判断
                 if (response.ContentEncoding != ""&&!(response.ContentEncoding is null))
                 {
-                    responseEncoding = Encoding.GetEncoding(response.ContentEncoding);
+                    responseEncoding = Encoding.GetEncoding(response.ContentEncoding.ToLower());
                 }
                 else if (response.CharacterSet != "" && !(response.CharacterSet is null) && response.ContentType.Contains("charset"))
                 {
-                    responseEncoding = Encoding.GetEncoding(response.CharacterSet ??
+                    responseEncoding = Encoding.GetEncoding(response.CharacterSet.ToLower() ??
                                                             throw new ReqResponseException("请求无响应"));
                 }
                 else
