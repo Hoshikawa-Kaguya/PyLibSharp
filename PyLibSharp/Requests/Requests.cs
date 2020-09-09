@@ -30,6 +30,7 @@ namespace PyLibSharp.Requests
         public bool                                  IsStream { get; set; } = false;
         public bool                                  IsUseHtmlMetaEncoding { get; set; } = true;
         public bool                                  IsThrowErrorForStatusCode { get; set; } = true;
+        public bool                                  IsThrowErrorForTimeout { get; set; } = true;
         public int                                   Timeout { get; set; } = 500;
         public int                                   ReadBufferSize { get; set; } = 1024;
     }
@@ -259,7 +260,7 @@ namespace PyLibSharp.Requests
 
         public static ReqResponse Get(string Url, ReqParams Params)
         {
-           return RequestBase(Url, "GET", Params, new CancellationTokenSource()).Result;
+            return RequestBase(Url, "GET", Params, new CancellationTokenSource()).Result;
         }
 
         public static ReqResponse Get(string Url, ReqParams Params, CancellationTokenSource CancelFlag)
@@ -320,13 +321,14 @@ namespace PyLibSharp.Requests
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
             if (string.IsNullOrEmpty(Url))
             {
-                throw new ArgumentNullException(nameof(Url));
+                throw new ArgumentNullException(nameof(Url), new Exception("URL 不可为空"));
             }
 
             if (Params.UseHandler)
             {
                 if (ReqExceptionHandler == null)
-                    throw new ArgumentNullException(nameof(ReqExceptionHandler));
+                    throw new ArgumentNullException(nameof(ReqExceptionHandler),
+                                                    new Exception("若要使用自定义错误处理函数，请先对事件 ReqExceptionHandler 增加处理函数。"));
             }
             else
             {
@@ -645,53 +647,98 @@ namespace PyLibSharp.Requests
             try
             {
                 request.CookieContainer = Params.Cookies;
+                HttpWebResponse response = null;
+                try
+                {
+                    //开始异步请求
+                    Task<WebResponse> responseTask = request.GetResponseAsync(CancelFlag.Token);
+                    //如果取消
+                    if (CancelFlag.IsCancellationRequested)
+                    {
+                        return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
+                    }
+                    else if (await Task.WhenAny(responseTask, Task.Delay(Params.Timeout)) != responseTask)
+                    {
+                        return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
+                    }
 
-                //开始异步请求
-                Task<WebResponse> responseTask = request.GetResponseAsync(CancelFlag.Token);
-                //如果取消
-                if (CancelFlag.IsCancellationRequested)
-                {
-                    return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
-                }
-                else if (await Task.WhenAny(responseTask, Task.Delay(Params.Timeout)) != responseTask)
-                {
-                    return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
-                }
+                    //异步请求结果
+                    if (responseTask.IsFaulted)
+                    {
+                        //出错继续抛出，若是WebException则仍可以继续，其他Exception由再外层的try-catch捕获
+                        throw responseTask.Exception.InnerException;
+                    }
 
-                //异步请求结果
-                HttpWebResponse response = (HttpWebResponse) responseTask.Result;
-                if (responseTask.IsFaulted)
-                {
-                    throw responseTask.Exception;
+                    response = (HttpWebResponse) responseTask.Result;
                 }
-                if (Params.IsThrowErrorForStatusCode && response.StatusCode != HttpStatusCode.OK               &&
-                    response.StatusCode                                     != HttpStatusCode.Accepted         &&
-                    response.StatusCode                                     != HttpStatusCode.Continue         &&
-                    response.StatusCode                                     != HttpStatusCode.Created          &&
-                    response.StatusCode                                     != HttpStatusCode.Found            &&
-                    response.StatusCode                                     != HttpStatusCode.Moved            &&
-                    response.StatusCode                                     != HttpStatusCode.MovedPermanently &&
-                    response.StatusCode                                     != HttpStatusCode.MultipleChoices  &&
-                    response.StatusCode                                     != HttpStatusCode.NoContent        &&
-                    response.StatusCode                                     != HttpStatusCode.NotModified      &&
-                    response.StatusCode                                     != HttpStatusCode.PartialContent   &&
-                    response.StatusCode                                     != HttpStatusCode.Redirect         &&
-                    response.StatusCode                                     != HttpStatusCode.RedirectKeepVerb &&
-                    response.StatusCode                                     != HttpStatusCode.RedirectMethod   &&
-                    response.StatusCode                                     != HttpStatusCode.ResetContent)
+                catch (WebException ex)
                 {
-                    if (Params.UseHandler)
-                        ReqExceptionHandler(null,
-                                            new AggregateExceptionArgs()
-                                            {
-                                                AggregateException =
-                                                    new
-                                                        AggregateException(new
-                                                                               ReqRequestException("HTTP 状态码指示请求发生错误，状态码为：" +
-                                                                                   response.StatusCode))
-                                            });
+                    if (ex.Status == WebExceptionStatus.ProtocolError
+                     && Params.IsThrowErrorForStatusCode)
+                    {
+                        if (Params.UseHandler)
+
+                            ReqExceptionHandler(null,
+                                                new AggregateExceptionArgs()
+                                                {
+                                                    AggregateException =
+                                                        new
+                                                            AggregateException(new
+                                                                                   ReqRequestException("HTTP 状态码指示请求发生错误，状态为：" +
+                                                                                       (int) ((HttpWebResponse) ex
+                                                                                           .Response).StatusCode +
+                                                                                       " "                       +
+                                                                                       ((HttpWebResponse) ex
+                                                                                           .Response).StatusCode))
+                                                });
+                        else
+                            throw new ReqRequestException("HTTP 状态码指示请求发生错误，状态为："                          +
+                                                          (int) ((HttpWebResponse) ex.Response).StatusCode + " " +
+                                                          ((HttpWebResponse) ex.Response).StatusCode);
+                    }
+                    else if (ex.Status == WebExceptionStatus.Timeout)
+                    {
+                        if (Params.IsThrowErrorForTimeout)
+                        {
+                            if (Params.UseHandler)
+
+                                ReqExceptionHandler(null,
+                                                    new AggregateExceptionArgs()
+                                                    {
+                                                        AggregateException =
+                                                            new
+                                                                AggregateException(new
+                                                                    ReqRequestException("HTTP 请求超时"))
+                                                    });
+                            else
+                                throw new ReqRequestException("HTTP 请求超时");
+                        }
+
+                        return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
+                    }
                     else
-                        throw new ReqRequestException("HTTP 状态码指示请求发生错误，状态码为：" + response.StatusCode);
+                    {
+                        if (Params.UseHandler)
+
+                            ReqExceptionHandler(null,
+                                                new AggregateExceptionArgs()
+                                                {
+                                                    AggregateException =
+                                                        new
+                                                            AggregateException(new
+                                                                                   ReqRequestException("HTTP 请求时发生错误。",
+                                                                                       ex))
+                                                });
+                        else
+                            throw new ReqRequestException("HTTP 请求时发生错误", ex);
+                    }
+
+                    response = (HttpWebResponse) ex.Response;
+                }
+                //确保报错后有Response
+                if (response is null)
+                {
+                    return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
                 }
 
                 //获取响应流
@@ -714,11 +761,12 @@ namespace PyLibSharp.Requests
                 }
 
                 //编码自动判断
-                if (response.ContentEncoding != ""&&!(response.ContentEncoding is null))
+                if (response.ContentEncoding != "" && !(response.ContentEncoding is null))
                 {
                     responseEncoding = Encoding.GetEncoding(response.ContentEncoding.ToLower());
                 }
-                else if (response.CharacterSet != "" && !(response.CharacterSet is null) && response.ContentType.Contains("charset"))
+                else if (response.CharacterSet != "" && !(response.CharacterSet is null) &&
+                         response.ContentType.Contains("charset"))
                 {
                     responseEncoding = Encoding.GetEncoding(response.CharacterSet.ToLower() ??
                                                             throw new ReqResponseException("请求无响应"));
