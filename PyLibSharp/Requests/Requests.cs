@@ -275,6 +275,150 @@ namespace PyLibSharp.Requests
             public ErrorType          ErrType            { get; set; }
         }
 
+        public static ReqResponse XHR(string XHRData, ReqParams Params)
+        {
+            List<string> HeaderAndData = XHRData.Split(new string[] {"\r\n\r\n"},2, StringSplitOptions.RemoveEmptyEntries).ToList();
+            List<string> linesOfXHR    = HeaderAndData[0].Split(new[] {'\n'}, StringSplitOptions.RemoveEmptyEntries).ToList();
+            if (Params.UseHandler)
+            {
+                if (ReqExceptionHandler == null)
+                    throw new ArgumentNullException(nameof(ReqExceptionHandler),
+                                                    new Exception("若要使用自定义错误处理函数，请先对事件 ReqExceptionHandler 增加处理函数。"));
+            }
+            else
+            {
+                if (ReqExceptionHandler != null)
+                    Params.UseHandler = true;
+            }
+
+            if (!linesOfXHR.Any())
+            {
+                if (Params.UseHandler)
+                    ReqExceptionHandler(null,
+                                        new AggregateExceptionArgs()
+                                        {
+                                            AggregateException =
+                                                new AggregateException(new
+                                                                           ReqUrlException("XHR 格式有误：应至少有1行",
+                                                                               new Exception())),
+                                            ErrType = ErrorType.UrlParseError
+                                        });
+                else
+                    throw new ReqUrlException("XHR 格式有误：应至少有1行", new Exception());
+            }
+
+            string HTTPFirst = linesOfXHR.First();
+            linesOfXHR.RemoveAt(0);
+            string method = "";
+            string URL    = "";
+            try
+            {
+                var firstLine = HTTPFirst.Trim().Replace("  ", "").Split(new[] {' '});
+                method = firstLine[0];
+                URL    = firstLine[1];
+                string HTTPProtocal = firstLine[2]; //忽略
+            }
+            catch (Exception ex)
+            {
+                if (Params.UseHandler)
+                    ReqExceptionHandler(null,
+                                        new AggregateExceptionArgs()
+                                        {
+                                            AggregateException =
+                                                new AggregateException(new
+                                                                           ReqUrlException("XHR 格式有误：第一行格式有误", ex)),
+                                            ErrType = ErrorType.UrlParseError
+                                        });
+                else
+                    throw new ReqUrlException("XHR 格式有误：第一行格式有误", ex);
+            }
+
+
+            Dictionary<string, string>            headerAndKey        = new Dictionary<string, string>();
+            Dictionary<HttpRequestHeader, string> defaultHeaderAndKey = new Dictionary<HttpRequestHeader, string>();
+            string                                host                = "";
+            linesOfXHR.ForEach(i =>
+                               {
+                                   string currLine = (i.EndsWith("\r") ? i.Trim().TrimEnd('\r') : i.Trim());
+                                   string key      = currLine;
+                                   string value    = "";
+                                   if (currLine.Contains(":"))
+                                   {
+                                       key   = currLine.Split(new string[] {":"}, 2, StringSplitOptions.None)[0].Trim();
+                                       value = currLine.Split(new string[] {":"}, 2, StringSplitOptions.None)[1].Trim();
+                                   }
+
+                                   if (key.ToLower() == "host")
+                                   {
+                                       host = value;
+                                   }
+                                   else if (key.ToLower() == "accept-encoding")
+                                   {
+
+                                   }
+                                   //如果是预先定义的HTTP头部
+                                   else if (Enum.IsDefined(typeof(HttpRequestHeader), key.Replace("-", "")))
+                                   {
+                                       defaultHeaderAndKey
+                                           .Add((HttpRequestHeader) Enum.Parse(typeof(HttpRequestHeader), key.Replace("-",""), true),
+                                                value);
+                                       headerAndKey.Remove(key);
+                                   }
+                                   else
+                                   {
+                                       //如果是自定义HTTP头部
+                                       headerAndKey.Add(key, value);
+                                   }
+                               });
+
+
+            Params.Header       = defaultHeaderAndKey;
+            Params.CustomHeader = headerAndKey;
+
+            if (host=="")
+            {
+                if (Params.UseHandler)
+                    ReqExceptionHandler(null,
+                                        new AggregateExceptionArgs()
+                                        {
+                                            AggregateException =
+                                                new AggregateException(new
+                                                                           ReqUrlException("XHR 格式有误：未指定目标服务器 Host",
+                                                                               new Exception())),
+                                            ErrType = ErrorType.UrlParseError
+                                        });
+                else
+                    throw new ReqUrlException("XHR 格式有误：未指定目标服务器 Host", new Exception());
+            }
+
+
+            URL = "http://" + host + URL;
+
+            if (method.ToUpper() != "GET" && HeaderAndData.Count>1)
+            {
+                if (defaultHeaderAndKey.ContainsKey(HttpRequestHeader.ContentType) )
+                {
+                    if (defaultHeaderAndKey[HttpRequestHeader.ContentType].Contains("charset="))
+                    {
+                        Params.PostEncoding=Encoding.GetEncoding(defaultHeaderAndKey[HttpRequestHeader.ContentType].Split(new string[]{"charset="},StringSplitOptions.None)[1]);
+                    }
+                    if (defaultHeaderAndKey[HttpRequestHeader.ContentType].Contains("applition/json"))
+                    {
+                        Params.PostJson = HeaderAndData[1];
+                    }
+                    else
+                    {
+                        Params.PostRawData = Encoding.UTF8.GetBytes(HeaderAndData[1]);
+                    }
+                }
+                else
+                {
+                    Params.PostRawData = Encoding.UTF8.GetBytes(HeaderAndData[1]);
+                }
+            }
+
+            return RequestBase(URL, method, Params, new CancellationTokenSource()).Result;
+        }
 
         public static ReqResponse Get(string Url)
         {
@@ -405,7 +549,7 @@ namespace PyLibSharp.Requests
                     {
                         if (Url.Contains("?"))
                         {
-                            urlParsed += Url.Split('?')[1];
+                            urlParsed += "?"+Url.Split('?')[1];
                         }
                     }
                     else
@@ -436,8 +580,8 @@ namespace PyLibSharp.Requests
                                             AggregateException =
                                                 new AggregateException(new
                                                                            ReqUrlException("构造 URL 时发生错误，请检查 URL 格式和请求参数",
-                                                                               ex))
-                                            ,ErrType = ErrorType.UrlParseError
+                                                                               ex)),
+                                            ErrType = ErrorType.UrlParseError
                                         });
                 else
                     throw new ReqUrlException("构造 URL 时发生错误，请检查 URL 格式和请求参数", ex);
@@ -477,7 +621,15 @@ namespace PyLibSharp.Requests
                             request.Accept = header.Value;
                             break;
                         case HttpRequestHeader.Connection:
-                            request.Connection = header.Value;
+                            //request.Connection = header.Value;
+                            if (header.Value== "keep-alive")
+                            {
+                                request.KeepAlive = true;
+                            }
+                            else
+                            {
+                                request.KeepAlive = false;
+                            }
                             break;
                         case HttpRequestHeader.ContentLength:
                             if (long.TryParse(header.Value, out long length))
@@ -502,6 +654,7 @@ namespace PyLibSharp.Requests
                         case HttpRequestHeader.Host:
                             request.Host = header.Value;
                             break;
+
                         case HttpRequestHeader.Referer:
                             request.Referer = header.Value;
                             break;
@@ -526,8 +679,8 @@ namespace PyLibSharp.Requests
                                         new AggregateExceptionArgs()
                                         {
                                             AggregateException =
-                                                new AggregateException(new ReqHeaderException("构造 HTTP 头部时发生错误", ex))
-                                            ,ErrType = ErrorType.HTTPRequestHeaderError
+                                                new AggregateException(new ReqHeaderException("构造 HTTP 头部时发生错误", ex)),
+                                            ErrType = ErrorType.HTTPRequestHeaderError
                                         });
                 else
                     throw new ReqHeaderException("构造 HTTP 头部时发生错误", ex);
@@ -560,8 +713,8 @@ namespace PyLibSharp.Requests
                                                             new AggregateException(new
                                                                 ReqRequestException("以 application/x-www-form-urlencoded 类型 POST 时，Params 参数未设置或为空",
                                                                     new ArgumentNullException(nameof(
-                                                                        Params))))
-                                                        ,ErrType = ErrorType.ArgumentNull
+                                                                        Params)))),
+                                                        ErrType = ErrorType.ArgumentNull
                                                     });
                             else
                                 throw new
@@ -589,8 +742,7 @@ namespace PyLibSharp.Requests
                                                             new AggregateException(new
                                                                 ReqRequestException("以 multipart/formdata 类型 POST 时，PostMultiPart 参数未设置或为空",
                                                                     new
-                                                                        ArgumentNullException("PostMultiPart")))
-                                                       ,
+                                                                        ArgumentNullException("PostMultiPart"))),
                                                         ErrType = ErrorType.ArgumentNull
                                                     });
                             else
@@ -620,8 +772,7 @@ namespace PyLibSharp.Requests
                                                             new AggregateException(new
                                                                 ReqRequestException("以 application/x-www-form-urlencoded 类型 POST 时，Params 参数未设置或为空",
                                                                     new ArgumentNullException(nameof(
-                                                                        Params))))
-                                                       ,
+                                                                        Params)))),
                                                         ErrType = ErrorType.ArgumentNull
                                                     });
                             else
@@ -645,8 +796,7 @@ namespace PyLibSharp.Requests
                                                         AggregateException =
                                                             new AggregateException(new
                                                                 ReqRequestException("以 Json 类型 POST 时，PostJson 参数未设置或为空",
-                                                                    new ArgumentNullException("PostJson")))
-                                                       ,
+                                                                    new ArgumentNullException("PostJson"))),
                                                         ErrType = ErrorType.ArgumentNull
                                                     });
                             else
@@ -711,8 +861,9 @@ namespace PyLibSharp.Requests
                                                     AggregateException =
                                                         new
                                                             AggregateException(new
-                                                                                   ReqRequestException("用户主动取消 HTTP 请求",ErrorType.UserCancelled))
-                                                    ,ErrType =ErrorType.UserCancelled
+                                                                                   ReqRequestException("用户主动取消 HTTP 请求",
+                                                                                       ErrorType.UserCancelled)),
+                                                    ErrType = ErrorType.UserCancelled
                                                 });
                         return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
                     }
@@ -739,8 +890,8 @@ namespace PyLibSharp.Requests
                                                                                        ((HttpWebResponse) ex
                                                                                            .Response).StatusCode,
                                                                                        ErrorType
-                                                                                           .HTTPStatusCodeError))
-                                                   ,ErrType = ErrorType.HTTPStatusCodeError
+                                                                                           .HTTPStatusCodeError)),
+                                                    ErrType = ErrorType.HTTPStatusCodeError
                                                 });
                         else
                             throw new ReqRequestException("HTTP 状态码指示请求发生错误，状态为："                          +
@@ -761,8 +912,8 @@ namespace PyLibSharp.Requests
                                                             new
                                                                 AggregateException(new
                                                                     ReqRequestException("HTTP 请求超时",
-                                                                        ErrorType.HTTPRequestTimeout))
-                                                       ,ErrType = ErrorType.HTTPRequestTimeout
+                                                                        ErrorType.HTTPRequestTimeout)),
+                                                        ErrType = ErrorType.HTTPRequestTimeout
                                                     });
                             else
                                 throw new ReqRequestException("HTTP 请求超时", ErrorType.HTTPRequestTimeout);
@@ -781,8 +932,7 @@ namespace PyLibSharp.Requests
                                                         new
                                                             AggregateException(new
                                                                                    ReqRequestException("HTTP 请求时发生错误。",
-                                                                                       ex))
-                                                   ,
+                                                                                       ex)),
                                                     ErrType = ErrorType.HTTPRequestError
                                                 });
                         else
@@ -861,8 +1011,8 @@ namespace PyLibSharp.Requests
                                         new AggregateExceptionArgs()
                                         {
                                             AggregateException =
-                                                new AggregateException(new ReqResponseException("请求时发生错误", ex))
-                                            ,ErrType = ErrorType.Other
+                                                new AggregateException(new ReqResponseException("请求时发生错误", ex)),
+                                            ErrType = ErrorType.Other
                                         });
                 else
                     throw new ReqResponseException("请求时发生错误", ex);
