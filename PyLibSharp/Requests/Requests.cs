@@ -275,10 +275,29 @@ namespace PyLibSharp.Requests
             public ErrorType          ErrType            { get; set; }
         }
 
+        public static ReqResponse XHR(string XHRData)
+        {
+            return XHRBase(XHRData, new ReqParams()).Result;
+        }
+        public static async Task<ReqResponse> XHRAsync(string XHRData)
+        {
+            return await XHRBase(XHRData, new ReqParams());
+        }
         public static ReqResponse XHR(string XHRData, ReqParams Params)
         {
-            List<string> HeaderAndData = XHRData.Split(new string[] {"\r\n\r\n"},2, StringSplitOptions.RemoveEmptyEntries).ToList();
-            List<string> linesOfXHR    = HeaderAndData[0].Split(new[] {'\n'}, StringSplitOptions.RemoveEmptyEntries).ToList();
+            return XHRBase(XHRData, Params).Result;
+        }
+        public static async Task<ReqResponse> XHRAsync(string XHRData, ReqParams Params)
+        {
+            return await XHRBase(XHRData, Params);
+        }
+
+        private static async Task<ReqResponse> XHRBase(string XHRData, ReqParams Params)
+        {
+            List<string> HeaderAndData =
+                XHRData.Split(new string[] {"\r\n\r\n"}, 2, StringSplitOptions.RemoveEmptyEntries).ToList();
+            List<string> linesOfXHR =
+                HeaderAndData[0].Split(new[] {'\n'}, StringSplitOptions.RemoveEmptyEntries).ToList();
             if (Params.UseHandler)
             {
                 if (ReqExceptionHandler == null)
@@ -352,15 +371,18 @@ namespace PyLibSharp.Requests
                                    {
                                        host = value;
                                    }
-                                   else if (key.ToLower() == "accept-encoding")
+                                   else if (key.ToLower()== "content-length")
                                    {
 
+                                   }
+                                   else if (key.ToLower() == "accept-encoding")
+                                   {
                                    }
                                    //如果是预先定义的HTTP头部
                                    else if (Enum.IsDefined(typeof(HttpRequestHeader), key.Replace("-", "")))
                                    {
                                        defaultHeaderAndKey
-                                           .Add((HttpRequestHeader) Enum.Parse(typeof(HttpRequestHeader), key.Replace("-",""), true),
+                                           .Add((HttpRequestHeader) Enum.Parse(typeof(HttpRequestHeader), key.Replace("-", ""), true),
                                                 value);
                                        headerAndKey.Remove(key);
                                    }
@@ -375,7 +397,7 @@ namespace PyLibSharp.Requests
             Params.Header       = defaultHeaderAndKey;
             Params.CustomHeader = headerAndKey;
 
-            if (host=="")
+            if (host == "")
             {
                 if (Params.UseHandler)
                     ReqExceptionHandler(null,
@@ -394,30 +416,84 @@ namespace PyLibSharp.Requests
 
             URL = "http://" + host + URL;
 
-            if (method.ToUpper() != "GET" && HeaderAndData.Count>1)
+            if (method.ToUpper() != "GET" && HeaderAndData.Count > 1)
             {
-                if (defaultHeaderAndKey.ContainsKey(HttpRequestHeader.ContentType) )
+                if (defaultHeaderAndKey.ContainsKey(HttpRequestHeader.ContentType))
                 {
                     if (defaultHeaderAndKey[HttpRequestHeader.ContentType].Contains("charset="))
                     {
-                        Params.PostEncoding=Encoding.GetEncoding(defaultHeaderAndKey[HttpRequestHeader.ContentType].Split(new string[]{"charset="},StringSplitOptions.None)[1]);
+                        Params.PostEncoding =
+                            Encoding.GetEncoding(defaultHeaderAndKey[HttpRequestHeader.ContentType]
+                                                     .Split(new string[] {"charset="}, StringSplitOptions.None)[1]);
                     }
-                    if (defaultHeaderAndKey[HttpRequestHeader.ContentType].Contains("applition/json"))
+
+                    if (Params.PostParamsType == PostType.none)
                     {
-                        Params.PostJson = HeaderAndData[1];
-                    }
-                    else
-                    {
-                        Params.PostRawData = Encoding.UTF8.GetBytes(HeaderAndData[1]);
+                        if (defaultHeaderAndKey[HttpRequestHeader.ContentType].ToLower()
+                                                                              .Contains("application/x-www-form-urlencoded")
+                        )
+                        {
+                            Params.PostParamsType = PostType.x_www_form_urlencoded;
+                        }
+
+                        if (defaultHeaderAndKey[HttpRequestHeader.ContentType].ToLower()
+                                                                              .Contains("multipart/form-data")
+                        )
+                        {
+                            Params.PostParamsType = PostType.form_data;
+                        }
+
+                        if (defaultHeaderAndKey[HttpRequestHeader.ContentType].ToLower()
+                                                                              .Contains("application/json")
+                        )
+                        {
+                            Params.PostParamsType = PostType.json;
+                        }
                     }
                 }
-                else
+
+                switch (Params.PostParamsType)
                 {
-                    Params.PostRawData = Encoding.UTF8.GetBytes(HeaderAndData[1]);
+                    case PostType.raw:
+                        Params.PostRawData = Params.PostEncoding.GetBytes(HeaderAndData[1]);
+                        break;
+                    case PostType.x_www_form_urlencoded:
+                        defaultHeaderAndKey[HttpRequestHeader.ContentType] =
+                            "application/x-www-form-urlencoded;charset=" + Params.PostEncoding.WebName;
+                        Params.PostRawData    = Params.PostEncoding.GetBytes(HeaderAndData[1]);
+                        Params.PostParamsType = PostType.raw;
+                        break;
+                    case PostType.form_data:
+                        Params.PostRawData    = Params.PostEncoding.GetBytes(HeaderAndData[1]);
+                        Params.PostParamsType = PostType.raw;
+                        break;
+                    case PostType.json:
+                        defaultHeaderAndKey[HttpRequestHeader.ContentType] =
+                            "application/json;charset=" + Params.PostEncoding.WebName;
+                        Params.PostJson = HeaderAndData[1];
+                        break;
+                    default:
+                        if (defaultHeaderAndKey.ContainsKey(HttpRequestHeader.ContentType))
+                        {
+                            if (defaultHeaderAndKey[HttpRequestHeader.ContentType].ToLower().Contains("applition/json"))
+                            {
+                                Params.PostJson = HeaderAndData[1];
+                            }
+                            else
+                            {
+                                Params.PostRawData = Params.PostEncoding.GetBytes(HeaderAndData[1]);
+                            }
+                        }
+                        else
+                        {
+                            Params.PostRawData = Params.PostEncoding.GetBytes(HeaderAndData[1]);
+                        }
+
+                        break;
                 }
             }
 
-            return RequestBase(URL, method, Params, new CancellationTokenSource()).Result;
+            return await RequestBase(URL, method, Params, new CancellationTokenSource());
         }
 
         public static ReqResponse Get(string Url)
@@ -549,7 +625,7 @@ namespace PyLibSharp.Requests
                     {
                         if (Url.Contains("?"))
                         {
-                            urlParsed += "?"+Url.Split('?')[1];
+                            urlParsed += "?" + Url.Split('?')[1];
                         }
                     }
                     else
@@ -622,7 +698,7 @@ namespace PyLibSharp.Requests
                             break;
                         case HttpRequestHeader.Connection:
                             //request.Connection = header.Value;
-                            if (header.Value== "keep-alive")
+                            if (header.Value == "keep-alive")
                             {
                                 request.KeepAlive = true;
                             }
@@ -630,6 +706,7 @@ namespace PyLibSharp.Requests
                             {
                                 request.KeepAlive = false;
                             }
+
                             break;
                         case HttpRequestHeader.ContentLength:
                             if (long.TryParse(header.Value, out long length))
@@ -700,128 +777,128 @@ namespace PyLibSharp.Requests
             //POST 数据写入
             if (Method == "POST" || Method == "PUT")
             {
-                switch (Params.PostParamsType)
+                using (Stream stream = request.GetRequestStream())
                 {
-                    case PostType.x_www_form_urlencoded:
-                        if (string.IsNullOrEmpty(paramStr))
-                        {
-                            if (Params.UseHandler)
-                                ReqExceptionHandler(null,
-                                                    new AggregateExceptionArgs()
-                                                    {
-                                                        AggregateException =
-                                                            new AggregateException(new
-                                                                ReqRequestException("以 application/x-www-form-urlencoded 类型 POST 时，Params 参数未设置或为空",
-                                                                    new ArgumentNullException(nameof(
-                                                                        Params)))),
-                                                        ErrType = ErrorType.ArgumentNull
-                                                    });
-                            else
-                                throw new
-                                    ReqRequestException("以 application/x-www-form-urlencoded 类型 POST 时，Params 参数未设置或为空",
-                                                        new ArgumentNullException(nameof(Params)));
-                        }
+                    switch (Params.PostParamsType)
+                    {
+                        case PostType.x_www_form_urlencoded:
+                            if (string.IsNullOrEmpty(paramStr))
+                            {
+                                if (Params.UseHandler)
+                                    ReqExceptionHandler(null,
+                                                        new AggregateExceptionArgs()
+                                                        {
+                                                            AggregateException =
+                                                                new AggregateException(new
+                                                                    ReqRequestException("以 application/x-www-form-urlencoded 类型 POST 时，Params 参数未设置或为空",
+                                                                        new ArgumentNullException(nameof(
+                                                                            Params)))),
+                                                            ErrType = ErrorType.ArgumentNull
+                                                        });
+                                else
+                                    throw new
+                                        ReqRequestException("以 application/x-www-form-urlencoded 类型 POST 时，Params 参数未设置或为空",
+                                                            new ArgumentNullException(nameof(Params)));
+                            }
 
-                        request.ContentType =
-                            "application/x-www-form-urlencoded;charset=" + Params.PostEncoding.WebName;
-                        byte[] data = Params.PostEncoding.GetBytes(paramStr.ToString());
-                        using (Stream stream = request.GetRequestStream())
-                        {
+                            request.ContentType =
+                                "application/x-www-form-urlencoded;charset=" + Params.PostEncoding.WebName;
+                            byte[] data = Params.PostEncoding.GetBytes(paramStr.ToString());
+
                             await stream.WriteAsync(data, 0, data.Length);
-                        }
 
-                        break;
-                    case PostType.form_data:
-                        if (Params.PostMultiPart is null)
-                        {
-                            if (Params.UseHandler)
-                                ReqExceptionHandler(null,
-                                                    new AggregateExceptionArgs()
-                                                    {
-                                                        AggregateException =
-                                                            new AggregateException(new
-                                                                ReqRequestException("以 multipart/formdata 类型 POST 时，PostMultiPart 参数未设置或为空",
-                                                                    new
-                                                                        ArgumentNullException("PostMultiPart"))),
-                                                        ErrType = ErrorType.ArgumentNull
-                                                    });
-                            else
-                                throw new ReqRequestException("以 multipart/formdata 类型 POST 时，PostMultiPart 参数未设置或为空",
-                                                              new ArgumentNullException("PostMultiPart"));
-                        }
 
-                        var dat  = Params.PostMultiPart;
-                        var task = dat.ReadAsByteArrayAsync();
-                        request.ContentType   = dat.Headers.ContentType.ToString();
-                        request.ContentLength = dat.Headers.ContentLength.Value;
+                            break;
+                        case PostType.form_data:
+                            if (Params.PostMultiPart is null)
+                            {
+                                if (Params.UseHandler)
+                                    ReqExceptionHandler(null,
+                                                        new AggregateExceptionArgs()
+                                                        {
+                                                            AggregateException =
+                                                                new AggregateException(new
+                                                                    ReqRequestException("以 multipart/formdata 类型 POST 时，PostMultiPart 参数未设置或为空",
+                                                                        new
+                                                                            ArgumentNullException("PostMultiPart"))),
+                                                            ErrType = ErrorType.ArgumentNull
+                                                        });
+                                else
+                                    throw new
+                                        ReqRequestException("以 multipart/formdata 类型 POST 时，PostMultiPart 参数未设置或为空",
+                                                            new ArgumentNullException("PostMultiPart"));
+                            }
 
-                        using (Stream stream = request.GetRequestStream())
-                        {
+                            var dat  = Params.PostMultiPart;
+                            var task = dat.ReadAsByteArrayAsync();
+                            request.ContentType   = dat.Headers.ContentType.ToString();
+                            request.ContentLength = dat.Headers.ContentLength.Value;
+
+
                             await stream.WriteAsync(task.Result, 0, task.Result.Length);
-                        }
 
-                        break;
-                    case PostType.raw:
-                        if (Params.PostRawData is null || Params.PostRawData.Length == 0)
-                        {
-                            if (Params.UseHandler)
-                                ReqExceptionHandler(null,
-                                                    new AggregateExceptionArgs()
-                                                    {
-                                                        AggregateException =
-                                                            new AggregateException(new
-                                                                ReqRequestException("以 application/x-www-form-urlencoded 类型 POST 时，Params 参数未设置或为空",
-                                                                    new ArgumentNullException(nameof(
-                                                                        Params)))),
-                                                        ErrType = ErrorType.ArgumentNull
-                                                    });
-                            else
-                                throw new ReqRequestException("以 Raw 类型 POST 时，PostRawData 参数未设置或为空",
-                                                              new ArgumentNullException("RawPostParams"));
-                        }
 
-                        using (Stream stream = request.GetRequestStream())
-                        {
+                            break;
+                        case PostType.raw:
+                            if (Params.PostRawData is null || Params.PostRawData.Length == 0)
+                            {
+                                if (Params.UseHandler)
+                                    ReqExceptionHandler(null,
+                                                        new AggregateExceptionArgs()
+                                                        {
+                                                            AggregateException =
+                                                                new AggregateException(new
+                                                                    ReqRequestException("以 application/x-www-form-urlencoded 类型 POST 时，Params 参数未设置或为空",
+                                                                        new ArgumentNullException(nameof(
+                                                                            Params)))),
+                                                            ErrType = ErrorType.ArgumentNull
+                                                        });
+                                else
+                                    throw new ReqRequestException("以 Raw 类型 POST 时，PostRawData 参数未设置或为空",
+                                                                  new ArgumentNullException("RawPostParams"));
+                            }
+
+
                             await stream.WriteAsync(Params.PostRawData, 0, Params.PostRawData.Length);
-                        }
 
-                        break;
-                    case PostType.json:
-                        if (Params.PostJson == null)
-                        {
-                            if (Params.UseHandler)
-                                ReqExceptionHandler(null,
-                                                    new AggregateExceptionArgs()
-                                                    {
-                                                        AggregateException =
-                                                            new AggregateException(new
-                                                                ReqRequestException("以 Json 类型 POST 时，PostJson 参数未设置或为空",
-                                                                    new ArgumentNullException("PostJson"))),
-                                                        ErrType = ErrorType.ArgumentNull
-                                                    });
+
+                            break;
+                        case PostType.json:
+                            if (Params.PostJson == null)
+                            {
+                                if (Params.UseHandler)
+                                    ReqExceptionHandler(null,
+                                                        new AggregateExceptionArgs()
+                                                        {
+                                                            AggregateException =
+                                                                new AggregateException(new
+                                                                    ReqRequestException("以 Json 类型 POST 时，PostJson 参数未设置或为空",
+                                                                        new
+                                                                            ArgumentNullException("PostJson"))),
+                                                            ErrType = ErrorType.ArgumentNull
+                                                        });
+                                else
+                                    throw new ReqRequestException("以 Json 类型 POST 时，PostJson 参数未设置或为空",
+                                                                  new ArgumentNullException("PostJson"));
+                            }
+
+                            request.ContentType = "application/json;charset=" + Params.PostEncoding.WebName;
+                            byte[] jsonData;
+                            if (Params.PostJson is string json)
+                            {
+                                jsonData = Params.PostEncoding.GetBytes(json);
+                            }
                             else
-                                throw new ReqRequestException("以 Json 类型 POST 时，PostJson 参数未设置或为空",
-                                                              new ArgumentNullException("PostJson"));
-                        }
-
-                        request.ContentType = "application/json;charset=" + Params.PostEncoding.WebName;
-                        byte[] jsonData;
-                        if (Params.PostJson is string json)
-                        {
-                            jsonData = Params.PostEncoding.GetBytes(json);
-                        }
-                        else
-                        {
-                            jsonData = Params.PostEncoding.GetBytes(JsonConvert.SerializeObject(Params.PostJson));
-                        }
+                            {
+                                jsonData = Params.PostEncoding.GetBytes(JsonConvert.SerializeObject(Params.PostJson));
+                            }
 
 
-                        using (Stream stream = request.GetRequestStream())
-                        {
                             await stream.WriteAsync(jsonData, 0, jsonData.Length);
-                        }
 
-                        break;
+
+                            break;
+                    }
                 }
             }
 
