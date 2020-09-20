@@ -8,16 +8,14 @@
 
 Use. Net to encapsulate some common functions according to the design idea of some Python libraries</Description>
     <Authors>xiaohe321</Authors>
-    <Version>1.1.5</Version>
+    <Version>1.1.6</Version>
     <Company />
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/xh321/PyLibSharp</PackageProjectUrl>
     <RepositoryUrl></RepositoryUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <NeutralLanguage>zh-CN</NeutralLanguage>
-    <PackageReleaseNotes>增加自定义错误处理Exception的ErrType，可辅助判断出错原因
-修正异步请求报错无法捕获的问题
-修正HTTP返回码报错提示，增加HTTP超时提示</PackageReleaseNotes>
+    <PackageReleaseNotes>添加XHR直接解析的支持</PackageReleaseNotes>
     <PackageTags>request network</PackageTags>
   </PropertyGroup>
 

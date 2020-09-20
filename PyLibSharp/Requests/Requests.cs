@@ -14,36 +14,157 @@ using System.Web;
 
 namespace PyLibSharp.Requests
 {
+    /// <summary>
+    /// 设置 HTTP 请求的基本参数。
+    /// </summary>
     public class ReqParams
     {
+        /// <summary>
+        /// <para>设置 HTTP 请求中的默认头部。</para>
+        /// <para>若此参数并不包含你想要设置的头部，请改用 <see langword="CustomHeader"></see> 参数去设置。</para>
+        /// </summary>
         public Dictionary<HttpRequestHeader, string> Header { get; set; } = new Dictionary<HttpRequestHeader, string>();
-        public WebProxy                              ProxyToUse { get; set; }
-        public CookieContainer                       Cookies { get; set; } = new CookieContainer();
-        public Dictionary<string, string>            CustomHeader { get; set; } = new Dictionary<string, string>();
-        public Dictionary<string, string>            Params { get; set; } = new Dictionary<string, string>();
-        public byte[]                                PostRawData { get; set; }
-        public object                                PostJson { get; set; }
-        public MultipartFormDataContent              PostMultiPart { get; set; }
-        public Encoding                              PostEncoding { get; set; } = new System.Text.UTF8Encoding(false);
-        public PostType                              PostParamsType { get; set; } = PostType.none;
-        public bool                                  UseHandler { get; set; } = false;
-        public bool                                  IsStream { get; set; } = false;
-        public bool                                  IsUseHtmlMetaEncoding { get; set; } = true;
-        public bool                                  IsThrowErrorForStatusCode { get; set; } = true;
-        public bool                                  IsThrowErrorForTimeout { get; set; } = true;
-        public int                                   Timeout { get; set; } = 500;
-        public int                                   ReadBufferSize { get; set; } = 1024;
+
+        /// <summary>
+        /// 设置传输过程中使用的代理。
+        /// </summary>
+        public WebProxy ProxyToUse { get; set; }
+
+        /// <summary>
+        /// 设置传输时采用的 Cookie 容器。
+        /// </summary>
+        public CookieContainer Cookies { get; set; } = new CookieContainer();
+
+        /// <summary>
+        /// 当要设置 <see langword="Header"></see> 中的参数所不包含的默认头部或任何自定义头部时，请使用本参数设置。
+        /// </summary>
+        public Dictionary<string, string> CustomHeader { get; set; } = new Dictionary<string, string>();
+
+        /// <summary>
+        /// <para>设置要传递给服务器的请求参数。</para>
+        /// <para>当 HTTP 动作为 <see langword="GET"></see> 时，将智能附加至 URL 。</para>
+        /// <para>其他 HTTP 动作时，将写入传输流，此时请设置 <see langword="PostParamsType"></see> 以明确如何传输数据。</para>
+        /// <para>其他 HTTP 动作时，此参数优先级不如 <see langword="PostContent"></see> 高，若设置了 <see langword="PostContent"></see> 参数，此参数将被忽略。</para>
+        /// </summary>
+        public Dictionary<string, string> Params { get; set; } = new Dictionary<string, string>();
+        /// <summary>
+        /// <para>（GET 动作中此参数将被忽略）</para>
+        /// <para>设置要 Post 至服务器的 HTTP 内容（如有必要需手动设置 <see langword="HttpContent"></see> 的 MediaType 字符串，如嫌麻烦请继续使用 <see langword="PostRawData"></see>、<see langword="PostJson"></see>、<see langword="PostMultiPart"></see> 参数，这些参数会自动设置 ContentType ）。</para>
+        /// <para>若同时设置了 <see langword="PostRawData"></see>、<see langword="PostJson"></see>、<see langword="PostMultiPart"></see>，此参数优先级最高，将使用本参数指定的方式进行 Post ；</para>
+        /// <para>在未设置 <see langword="PostParamsType"></see> 参数时，将自动修改 <see langword="PostParamsType"></see> 的值。</para>
+        /// </summary>
+        public HttpContent PostContent { get; set; }
+
+        /// <summary>
+        /// <para>（GET 动作中此参数将被忽略）</para>
+        /// <para>建议改用 <see langword="PostContent"></see> 参数传递 HttpContent；</para>
+        /// <para>设置要 Post 至服务器的原始字节序列。</para>
+        /// <para>若同时设置了 <see langword="PostContent"></see>、<see langword="PostRawData"></see>、<see langword="PostJson"></see>、<see langword="PostMultiPart"></see>，<see langword="PostContent"></see> 参数优先级最高，将使用 <see langword="PostContent"></see> 指定的方式进行 Post ；</para>
+        /// <para>在未设置 <see langword="PostParamsType"></see> 参数时，将自动修改 <see langword="PostParamsType"></see> 的值。</para>
+        /// </summary>
+        public byte[] PostRawData { get; set; }
+
+        /// <summary>
+        /// <para>（GET 动作中此参数将被忽略）</para>
+        /// <para>建议改用 <see langword="PostContent"></see> 参数传递 HttpContent；</para>
+        /// <para>设置要 Post 至服务器的 Json 数据。</para>
+        /// <para>若同时设置了 <see langword="PostContent"></see>、<see langword="PostRawData"></see>、<see langword="PostJson"></see>、<see langword="PostMultiPart"></see>，<see langword="PostContent"></see> 参数优先级最高，将使用 <see langword="PostContent"></see> 指定的方式进行 Post ；</para>
+        /// <para>在未设置 <see langword="PostParamsType"></see> 参数时，将自动修改 <see langword="PostParamsType"></see> 的值。</para>
+        /// </summary>
+        public object PostJson { get; set; }
+
+        /// <summary>
+        /// <para>（GET 动作中此参数将被忽略）</para>
+        /// <para>建议改用 <see langword="PostContent"></see> 参数传递 HttpContent；</para>
+        /// <para>设置要 Post 到服务器的 MultiPart 数据。</para>
+        /// <para>若同时设置了 <see langword="PostContent"></see>、<see langword="PostRawData"></see>、<see langword="PostJson"></see>、<see langword="PostMultiPart"></see>，<see langword="PostContent"></see> 参数优先级最高，将使用 <see langword="PostContent"></see> 指定的方式进行 Post ；</para>
+        /// <para>在未设置 <see langword="PostParamsType"></see> 参数时，将自动修改 <see langword="PostParamsType"></see> 的值。</para>
+        /// </summary>
+        public MultipartFormDataContent PostMultiPart { get; set; }
+
+        /// <summary>
+        /// <para>（GET 动作中此参数将被忽略）</para>
+        /// <para>若 Post 传输的是字符串，该参数用来决定将采用的编码（对 <see langword="PostContent"></see> 参数中设置的编码无影响）。</para>
+        /// </summary>
+        public Encoding PostEncoding { get; set; } = new System.Text.UTF8Encoding(false);
+
+        /// <summary>
+        /// <para>（GET 动作中此参数将被忽略）</para>
+        /// <para>设置 Post 采用的传输方式。</para>
+        /// </summary>
+        public PostType PostParamsType { get; set; } = PostType.none;
+
+        /// <summary>
+        /// <para>设置是否采用自定义错误捕捉器。</para>
+        /// <para>若设置为true，请务必同时设置 <see cref="T:PyLibSharp.Requests.Requests" /> 类的 <see langword="ReqExceptionHandler"></see> 参数。</para>
+        /// </summary>
+        public bool UseHandler { get; set; } = false;
+        /// <summary>
+        /// 设置是否在结果中转储原始字节流。
+        /// </summary>
+        public bool IsStream                  { get; set; } = false;
+        /// <summary>
+        /// <para>设置当请求 HTML 时，是否使用 HTML 头部中的 <see langword="meta"></see> 标签自动获取编码。</para>
+        /// <para>如设为 <see langword="true"></see>，将覆盖 HTTP 响应头中的编码设置。</para>
+        /// </summary>
+        public bool IsUseHtmlMetaEncoding     { get; set; } = true;
+        /// <summary>
+        /// 设置当 HTTP 响应码不正常时，是否抛出异常。
+        /// </summary>
+        public bool IsThrowErrorForStatusCode { get; set; } = true;
+        /// <summary>
+        /// 设置当 HTTP 响应超时时，是否抛出异常。
+        /// </summary>
+        public bool IsThrowErrorForTimeout    { get; set; } = true;
+        /// <summary>
+        /// 设置 HTTP 连接等待的超时时间（单位毫秒/ms）。
+        /// </summary>
+        public int  Timeout                   { get; set; } = 500;
+        /// <summary>
+        /// 设置读取 HTTP 响应的缓冲区大小（单位字节/byte）。
+        /// </summary>
+        public int  ReadBufferSize            { get; set; } = 1024;
     }
 
+    /// <summary>
+    /// 设置当 Post 时数据的传输方式。
+    /// </summary>
     public enum PostType
     {
+        /// <summary>
+        /// 采用 HttpContent 封装 Post 有效载荷。
+        /// </summary>
+        http_content,
+
+        /// <summary>
+        /// 要传输的是 Json 数据（将自动设置 ContentType ）
+        /// </summary>
         json,
+
+        /// <summary>
+        /// 要传输的是 WWW 表单数据（将自动进行 URL 编码以及设置 ContentType ）
+        /// </summary>
         x_www_form_urlencoded,
+
+        /// <summary>
+        /// 要传输的是 Multipart FormData 数据（将自动设置 ContentType ）
+        /// </summary>
         form_data,
+
+        /// <summary>
+        /// 要传输的是原始字节序列数据（建议手动设置 ContentType ）
+        /// </summary>
         raw,
+
+        /// <summary>
+        /// 默认（不 Post 数据）
+        /// </summary>
         none
     }
 
+    /// <summary>
+    /// 若要让字典支持重复的键，请实例化本类并传入字典的构造函数。
+    /// </summary>
     public class ReqRepeatable : IEqualityComparer<string>
     {
         public bool Equals(string x, string y)
@@ -57,17 +178,44 @@ namespace PyLibSharp.Requests
         }
     }
 
+    /// <summary>
+    /// 储存 HTTP 响应的基本信息。
+    /// </summary>
     public class ReqResponse
     {
+        /// <summary>
+        /// 获取 HTTP 响应转储的原始字节流。
+        /// </summary>
+        /// <returns>HTTP 响应转储的原始字节流</returns>
         public MemoryStream    RawStream { get; }
+        /// <summary>
+        /// 获取 HTTP 响应的 Cookie 容器。
+        /// </summary>
+        /// <returns>HTTP 响应的 Cookie 容器</returns>
         public CookieContainer Cookies   { get; }
-        public string          Text      => Encode.GetString(RawStream.ToArray());
-
+        /// <summary>
+        /// 获取 HTTP 响应的纯文本（将使用 <see langword="Encode"></see> 参数所代表的编码进行解码）
+        /// </summary>
+        /// <returns>HTTP 响应纯文本</returns>
+        public string Text => Encode.GetString(RawStream.ToArray());
+        /// <summary>
+        /// 获取 HTTP 响应的原始字节序列。
+        /// </summary>
+        /// <returns>HTTP 响应的原始字节序列</returns>
         public byte[] Content => RawStream.ToArray();
-
+        /// <summary>
+        /// 获取 HTTP 响应的 ContentType。
+        /// </summary>
+        /// <returns>HTTP 响应的ContentType</returns>
         public string ContentType { get; }
-
+        /// <summary>
+        /// <para>获取 HTTP 响应使用的编码；</para>
+        /// <para>或设置当解码 <see langword="Text"></see> 参数或执行 Json() 函数时要采用的编码。</para>
+        /// </summary>
         public Encoding       Encode     { get; set; }
+        /// <summary>
+        /// 获取 HTTP 响应码。
+        /// </summary>
         public HttpStatusCode StatusCode { get; }
 
         public ReqResponse(MemoryStream rawStream, CookieContainer cookies, string contentType, Encoding encode,
@@ -80,6 +228,10 @@ namespace PyLibSharp.Requests
             StatusCode  = statusCode;
         }
 
+        /// <summary>
+        /// 将结果中的 Text（将使用 <see langword="Encode"></see> 参数所代表的编码进行解码）解析为 <see langword="Json"></see> 的 JObject。
+        /// </summary>
+        /// <returns>解析后的 JObject 对象</returns>
         public JObject Json()
         {
             try
@@ -101,7 +253,10 @@ namespace PyLibSharp.Requests
                 throw new ReqResponseParseException("JSON 解析出错，请确保响应为 JSON 格式", ex);
             }
         }
-
+        /// <summary>
+        /// 获取 HTTP 响应的纯文本（将使用 <see langword="Encode"></see> 参数所代表的编码进行解码）
+        /// </summary>
+        /// <returns>HTTP 响应纯文本</returns>
         public override string ToString()
         {
             return Text;
@@ -109,7 +264,9 @@ namespace PyLibSharp.Requests
     }
 
     #region 自定义错误部分
-
+    /// <summary>
+    /// HTTP 中 URL解析、请求或响应中可能出现的错误类型。
+    /// </summary>
     public enum ErrorType
     {
         ArgumentNull,
@@ -279,14 +436,17 @@ namespace PyLibSharp.Requests
         {
             return XHRBase(XHRData, new ReqParams()).Result;
         }
+
         public static async Task<ReqResponse> XHRAsync(string XHRData)
         {
             return await XHRBase(XHRData, new ReqParams());
         }
+
         public static ReqResponse XHR(string XHRData, ReqParams Params)
         {
             return XHRBase(XHRData, Params).Result;
         }
+
         public static async Task<ReqResponse> XHRAsync(string XHRData, ReqParams Params)
         {
             return await XHRBase(XHRData, Params);
@@ -371,9 +531,8 @@ namespace PyLibSharp.Requests
                                    {
                                        host = value;
                                    }
-                                   else if (key.ToLower()== "content-length")
+                                   else if (key.ToLower() == "content-length")
                                    {
-
                                    }
                                    else if (key.ToLower() == "accept-encoding")
                                    {
@@ -592,24 +751,30 @@ namespace PyLibSharp.Requests
                                                       HttpUtility.UrlEncode(i.Value)));
             if (Params.PostParamsType == PostType.none)
             {
-                if (!string.IsNullOrEmpty(paramStr))
+                if (Params.PostContent != null)
+                {
+                    Params.PostParamsType = PostType.http_content;
+                }
+                else if (!string.IsNullOrEmpty(paramStr))
                 {
                     Params.PostParamsType = PostType.x_www_form_urlencoded;
                 }
-
-                if (Params.PostJson != null)
+                else
                 {
-                    Params.PostParamsType = PostType.json;
-                }
+                    if (Params.PostJson != null)
+                    {
+                        Params.PostParamsType = PostType.json;
+                    }
 
-                if (Params.PostRawData != null && Params.PostRawData.Length != 0)
-                {
-                    Params.PostParamsType = PostType.raw;
-                }
+                    if (Params.PostRawData != null && Params.PostRawData.Length != 0)
+                    {
+                        Params.PostParamsType = PostType.raw;
+                    }
 
-                if (Params.PostMultiPart != null && Params.PostMultiPart.Any())
-                {
-                    Params.PostParamsType = PostType.form_data;
+                    if (Params.PostMultiPart != null && Params.PostMultiPart.Any())
+                    {
+                        Params.PostParamsType = PostType.form_data;
+                    }
                 }
             }
 
@@ -662,6 +827,7 @@ namespace PyLibSharp.Requests
                 else
                     throw new ReqUrlException("构造 URL 时发生错误，请检查 URL 格式和请求参数", ex);
             }
+
 
             request.Method  = Method;
             request.Timeout = Params.Timeout;
@@ -781,6 +947,32 @@ namespace PyLibSharp.Requests
                 {
                     switch (Params.PostParamsType)
                     {
+                        case PostType.http_content:
+                            if (Params.PostContent == null)
+                            {
+                                if (Params.UseHandler)
+                                    ReqExceptionHandler(null,
+                                                        new AggregateExceptionArgs()
+                                                        {
+                                                            AggregateException =
+                                                                new AggregateException(new
+                                                                    ReqRequestException("以 HttpContent 类型 POST 时，HttpContent 参数未设置或为空",
+                                                                        new ArgumentNullException(nameof(
+                                                                            Params)))),
+                                                            ErrType = ErrorType.ArgumentNull
+                                                        });
+                                else
+                                    throw new
+                                        ReqRequestException("以 HttpContent 类型 POST 时，HttpContent 参数未设置或为空",
+                                                            new ArgumentNullException(nameof(Params)));
+                            }
+
+                            request.ContentType = Params.PostContent.Headers.ContentType + ";charset=" +
+                                                  Params.PostContent.Headers.ContentEncoding;
+
+                            await Params.PostContent.CopyToAsync(stream);
+
+                            break;
                         case PostType.x_www_form_urlencoded:
                             if (string.IsNullOrEmpty(paramStr))
                             {
