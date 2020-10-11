@@ -1141,32 +1141,35 @@ namespace PyLibSharp.Requests
                 }
                 catch (WebException ex)
                 {
-                    if (ex.Status == WebExceptionStatus.ProtocolError
-                     && Params.IsThrowErrorForStatusCode)
+                    if (ex.Status == WebExceptionStatus.ProtocolError)
                     {
-                        if (Params.UseHandler)
+                        if (Params.IsThrowErrorForStatusCode)
+                        {
+                            if (Params.UseHandler)
 
-                            ReqExceptionHandler(null,
-                                                new AggregateExceptionArgs()
-                                                {
-                                                    AggregateException =
-                                                        new
-                                                            AggregateException(new
-                                                                                   ReqRequestException("HTTP 状态码指示请求发生错误，状态为：" +
-                                                                                       (int) ((HttpWebResponse) ex
-                                                                                           .Response).StatusCode +
-                                                                                       " "                       +
-                                                                                       ((HttpWebResponse) ex
-                                                                                           .Response).StatusCode,
-                                                                                       ErrorType
-                                                                                           .HTTPStatusCodeError)),
-                                                    ErrType = ErrorType.HTTPStatusCodeError
-                                                });
-                        else
-                            throw new ReqRequestException("HTTP 状态码指示请求发生错误，状态为："                          +
-                                                          (int) ((HttpWebResponse) ex.Response).StatusCode + " " +
-                                                          ((HttpWebResponse) ex.Response).StatusCode,
-                                                          ErrorType.HTTPStatusCodeError);
+                                ReqExceptionHandler(null,
+                                                    new AggregateExceptionArgs()
+                                                    {
+                                                        AggregateException =
+                                                            new
+                                                                AggregateException(new
+                                                                    ReqRequestException("HTTP 状态码指示请求发生错误，状态为：" +
+                                                                        (int) ((HttpWebResponse) ex
+                                                                            .Response).StatusCode +
+                                                                        " "                       +
+                                                                        ((HttpWebResponse) ex
+                                                                            .Response).StatusCode,
+                                                                        ErrorType
+                                                                            .HTTPStatusCodeError)),
+                                                        ErrType = ErrorType.HTTPStatusCodeError
+                                                    });
+                            else
+                                throw new ReqRequestException("HTTP 状态码指示请求发生错误，状态为："                          +
+                                                              (int) ((HttpWebResponse) ex.Response).StatusCode + " " +
+                                                              ((HttpWebResponse) ex.Response).StatusCode,
+                                                              ErrorType.HTTPStatusCodeError);
+                        }
+
                     }
                     else if (ex.Status == WebExceptionStatus.Timeout)
                     {

@@ -1,6 +1,7 @@
 ﻿using PyLibSharp.Requests;
 using System;
-using System.Threading;
+using System.Net.Http;
+using System.Text;
 
 namespace TestCore
 {
@@ -8,18 +9,11 @@ namespace TestCore
     {
         static void Main(string[] args)
         {
-           Requests.ReqExceptionHandler += Requests_ReqExceptionHandler;
-           CancellationTokenSource cts=new CancellationTokenSource();
-           var data = Requests.GetAsync("https://127.0.0.1:9999",new ReqParams()
-           {
-               IsUseHtmlMetaEncoding = false,
-               UseHandler = true,
-               Timeout = 9999
-           });
-           Console.WriteLine("请求之后");
-          // cts.Cancel();
-            Console.WriteLine(data.Result);
-            Console.WriteLine(data.Result.Encode);
+            var str = Requests.GetAsync("http://www.baidu.com");
+
+            Console.WriteLine("结束");
+            Console.WriteLine(str.Result.Text);
+            Console.ReadKey();
         }
         private static void Requests_ReqExceptionHandler(object sender, Requests.AggregateExceptionArgs e)
         {
