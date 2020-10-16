@@ -854,6 +854,16 @@ namespace PyLibSharp.Requests
                     Params.Header.Add(HttpRequestHeader.Accept,
                                       "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
                 }
+                if (Method != "GET")
+                {
+                    var           cookieList = Utils.GetAllCookies(Params.Cookies);
+                    StringBuilder sb         = new StringBuilder();
+                    foreach (Cookie o in cookieList)
+                    {
+                        sb.Append(o.Name + "=" + o.Value + ";");
+                    }
+                    Params.Header.Add(HttpRequestHeader.Cookie, sb.ToString());
+                }
 
                 foreach (KeyValuePair<HttpRequestHeader, string> header in Params.Header)
                 {
@@ -938,7 +948,7 @@ namespace PyLibSharp.Requests
             MemoryStream    responseStream          = new MemoryStream();
             HttpStatusCode  responseStatusCode      = 0;
             string          responseContentType     = "";
-            CookieContainer responseCookieContainer = new CookieContainer();
+            CookieContainer responseCookieContainer = Params.Cookies;
 
             //POST 数据写入
             if (Method == "POST" || Method == "PUT")

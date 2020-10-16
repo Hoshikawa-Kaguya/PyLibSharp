@@ -8,15 +8,14 @@
 
 Use. Net to encapsulate some common functions according to the design idea of some Python libraries</Description>
     <Authors>xiaohe321</Authors>
-    <Version>1.1.7</Version>
+    <Version>1.1.8</Version>
     <Company />
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/xh321/PyLibSharp</PackageProjectUrl>
     <RepositoryUrl></RepositoryUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <NeutralLanguage>zh-CN</NeutralLanguage>
-    <PackageReleaseNotes>增加 PostContent参数，可采用 HttpContent进行 Post数据传输。
-完善部分注释。</PackageReleaseNotes>
+    <PackageReleaseNotes>修正IsThrowErrorForStatusCode参数无效</PackageReleaseNotes>
     <PackageTags>request network</PackageTags>
   </PropertyGroup>
 
