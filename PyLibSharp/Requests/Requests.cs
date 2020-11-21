@@ -194,7 +194,7 @@ namespace PyLibSharp.Requests
     /// <summary>
     /// 储存 HTTP 响应的基本信息。
     /// </summary>
-    public class ReqResponse : IEnumerable<char>
+    public class ReqResponse : IEnumerable<string>
     {
         /// <summary>
         /// 获取 HTTP 响应转储的原始字节流。
@@ -314,21 +314,29 @@ namespace PyLibSharp.Requests
         }
 
         /// <summary>
-        /// 获取返回值文本的迭代器
+        /// 获取返回值文本每一行的迭代器
         /// </summary>
         /// <returns></returns>
-        public IEnumerator<char> GetEnumerator()
+        public IEnumerator<string> GetEnumerator()
         {
-            return Text.GetEnumerator();
+            bool isCrLf = Text.Contains("\r");
+            foreach (string line in Regex.Split(Text, isCrLf ? "\r\n" : "\n"))
+            {
+                yield return line;
+            }
         }
 
         /// <summary>
-        /// 获取返回值文本的迭代器
+        /// 获取返回值文本每一行的迭代器
         /// </summary>
         /// <returns></returns>
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return Text.GetEnumerator();
+            bool isCrLf = Text.Contains("\r");
+            foreach (string line in Regex.Split(Text, isCrLf ? "\r\n" : "\n"))
+            {
+                yield return line;
+            }
         }
     }
 

@@ -15,9 +15,9 @@ namespace TestCore
             Console.WriteLine("结束");
             Console.WriteLine(str.Json());
 
-            foreach (char c in str)
+            foreach (string s in str)
             {
-                Console.Write(c);
+                Console.Write(s);
             }
 
             Console.ReadKey();

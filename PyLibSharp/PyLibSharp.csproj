@@ -8,15 +8,17 @@
 
 Use. Net to encapsulate some common functions according to the design idea of some Python libraries</Description>
     <Authors>xiaohe321</Authors>
-    <Version>1.1.9</Version>
+    <Version>1.2.0</Version>
     <Company />
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/xh321/PyLibSharp</PackageProjectUrl>
     <RepositoryUrl></RepositoryUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <NeutralLanguage>zh-CN</NeutralLanguage>
-    <PackageReleaseNotes>修复非GET情况下Cookie带不上的情况
-修正响应对象中的Cookie只带有新增Cookie的问题</PackageReleaseNotes>
+    <PackageReleaseNotes>增加可忽略 HTTPS 证书验证的选项
+修正 Json 解析方式
+HTTP 响应对象可迭代，将对 Text 进行迭代
+优化内部代码结构</PackageReleaseNotes>
     <PackageTags>request network</PackageTags>
   </PropertyGroup>
 
