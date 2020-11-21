@@ -133,7 +133,7 @@ namespace PyLibSharp.Requests
         /// <summary>
         /// 设置 HTTP 连接等待的超时时间（单位毫秒/ms）。
         /// </summary>
-        public int Timeout { get; set; } = 500;
+        public int Timeout { get; set; } = 1500;
 
         /// <summary>
         /// 设置读取 HTTP 响应的缓冲区大小（单位字节/byte）。
