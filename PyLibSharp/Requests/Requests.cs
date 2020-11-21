@@ -6,6 +6,8 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -47,6 +49,7 @@ namespace PyLibSharp.Requests
         /// <para>其他 HTTP 动作时，此参数优先级不如 <see langword="PostContent"></see> 高，若设置了 <see langword="PostContent"></see> 参数，此参数将被忽略。</para>
         /// </summary>
         public Dictionary<string, string> Params { get; set; } = new Dictionary<string, string>();
+
         /// <summary>
         /// <para>（GET 动作中此参数将被忽略）</para>
         /// <para>设置要 Post 至服务器的 HTTP 内容（如有必要需手动设置 <see langword="HttpContent"></see> 的 MediaType 字符串，如嫌麻烦请继续使用 <see langword="PostRawData"></see>、<see langword="PostJson"></see>、<see langword="PostMultiPart"></see> 参数，这些参数会自动设置 ContentType ）。</para>
@@ -99,31 +102,42 @@ namespace PyLibSharp.Requests
         /// <para>若设置为true，请务必同时设置 <see cref="T:PyLibSharp.Requests.Requests" /> 类的 <see langword="ReqExceptionHandler"></see> 参数。</para>
         /// </summary>
         public bool UseHandler { get; set; } = false;
+
         /// <summary>
         /// 设置是否在结果中转储原始字节流。
         /// </summary>
-        public bool IsStream                  { get; set; } = false;
+        public bool IsStream { get; set; } = false;
+
         /// <summary>
         /// <para>设置当请求 HTML 时，是否使用 HTML 头部中的 <see langword="meta"></see> 标签自动获取编码。</para>
         /// <para>如设为 <see langword="true"></see>，将覆盖 HTTP 响应头中的编码设置。</para>
         /// </summary>
-        public bool IsUseHtmlMetaEncoding     { get; set; } = true;
+        public bool IsUseHtmlMetaEncoding { get; set; } = true;
+
         /// <summary>
         /// 设置当 HTTP 响应码不正常时，是否抛出异常。
         /// </summary>
         public bool IsThrowErrorForStatusCode { get; set; } = true;
+
         /// <summary>
         /// 设置当 HTTP 响应超时时，是否抛出异常。
         /// </summary>
-        public bool IsThrowErrorForTimeout    { get; set; } = true;
+        public bool IsThrowErrorForTimeout { get; set; } = true;
+
+        /// <summary>
+        /// 是否检查 HTTPS 证书的合法性，默认不检查
+        /// </summary>
+        public bool isCheckSSLCert { get; set; } = false;
+
         /// <summary>
         /// 设置 HTTP 连接等待的超时时间（单位毫秒/ms）。
         /// </summary>
-        public int  Timeout                   { get; set; } = 500;
+        public int Timeout { get; set; } = 500;
+
         /// <summary>
         /// 设置读取 HTTP 响应的缓冲区大小（单位字节/byte）。
         /// </summary>
-        public int  ReadBufferSize            { get; set; } = 1024;
+        public int ReadBufferSize { get; set; } = 1024;
     }
 
     /// <summary>
@@ -187,32 +201,38 @@ namespace PyLibSharp.Requests
         /// 获取 HTTP 响应转储的原始字节流。
         /// </summary>
         /// <returns>HTTP 响应转储的原始字节流</returns>
-        public MemoryStream    RawStream { get; }
+        public MemoryStream RawStream { get; }
+
         /// <summary>
         /// 获取 HTTP 响应的 Cookie 容器。
         /// </summary>
         /// <returns>HTTP 响应的 Cookie 容器</returns>
-        public CookieContainer Cookies   { get; }
+        public CookieContainer Cookies { get; }
+
         /// <summary>
         /// 获取 HTTP 响应的纯文本（将使用 <see langword="Encode"></see> 参数所代表的编码进行解码）
         /// </summary>
         /// <returns>HTTP 响应纯文本</returns>
         public string Text => Encode.GetString(RawStream.ToArray());
+
         /// <summary>
         /// 获取 HTTP 响应的原始字节序列。
         /// </summary>
         /// <returns>HTTP 响应的原始字节序列</returns>
         public byte[] Content => RawStream.ToArray();
+
         /// <summary>
         /// 获取 HTTP 响应的 ContentType。
         /// </summary>
         /// <returns>HTTP 响应的ContentType</returns>
         public string ContentType { get; }
+
         /// <summary>
         /// <para>获取 HTTP 响应使用的编码；</para>
         /// <para>或设置当解码 <see langword="Text"></see> 参数或执行 Json() 函数时要采用的编码。</para>
         /// </summary>
-        public Encoding       Encode     { get; set; }
+        public Encoding Encode { get; set; }
+
         /// <summary>
         /// 获取 HTTP 响应码。
         /// </summary>
@@ -241,18 +261,14 @@ namespace PyLibSharp.Requests
                 //     throw new WarningException("HTTP 响应中的 Content-Type 并非 JSON 格式，响应的数据有可能并不是 JSON");
                 // }
 
-                return JsonConvert.DeserializeObject(Text) as JObject;
+                return JArray.Parse(Text ?? "[]")[0].ToObject<JObject>();
             }
             catch (Exception ex)
             {
-                // if (ex.GetType() == typeof(WarningException))
-                // {
-                //     throw;
-                // }
-
-                throw new ReqResponseParseException("JSON 解析出错，请确保响应为 JSON 格式", ex);
+                throw new ReqResponseParseException("JSON 解析出错，请确保响应为 JSON 格式: " + ex.Message, ex);
             }
         }
+
         /// <summary>
         /// 获取 HTTP 响应的纯文本（将使用 <see langword="Encode"></see> 参数所代表的编码进行解码）
         /// </summary>
@@ -264,6 +280,7 @@ namespace PyLibSharp.Requests
     }
 
     #region 自定义错误部分
+
     /// <summary>
     /// HTTP 中 URL解析、请求或响应中可能出现的错误类型。
     /// </summary>
@@ -432,6 +449,46 @@ namespace PyLibSharp.Requests
             public ErrorType          ErrType            { get; set; }
         }
 
+        /// <summary>
+        /// 通用错误处理函数
+        /// </summary>
+        /// <param name="useHandler">是否使用捕捉器</param>
+        /// <param name="handler">捕捉器</param>
+        /// <param name="innerException">内部错误</param>
+        /// <param name="errType">错误类型</param>
+        public static void HandleError(bool useHandler, EventHandler<AggregateExceptionArgs> handler,
+                                       Exception innerException, ErrorType errType)
+        {
+            if (useHandler)
+            {
+                handler?.Invoke(null,
+                                new AggregateExceptionArgs()
+                                {
+                                    AggregateException =
+                                        new AggregateException(innerException),
+                                    ErrType = errType
+                                });
+            }
+            else
+            {
+                throw innerException;
+            }
+        }
+
+        /// <summary>
+        /// HTTPS 不检查证书
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="certificate"></param>
+        /// <param name="chain"></param>
+        /// <param name="errors"></param>
+        /// <returns></returns>
+        private static bool CheckValidationResult(object sender, X509Certificate certificate, X509Chain chain,
+                                                  SslPolicyErrors errors)
+        {
+            return true; //总是接受
+        }
+
         public static ReqResponse XHR(string XHRData)
         {
             return XHRBase(XHRData, new ReqParams()).Result;
@@ -472,18 +529,9 @@ namespace PyLibSharp.Requests
 
             if (!linesOfXHR.Any())
             {
-                if (Params.UseHandler)
-                    ReqExceptionHandler(null,
-                                        new AggregateExceptionArgs()
-                                        {
-                                            AggregateException =
-                                                new AggregateException(new
-                                                                           ReqUrlException("XHR 格式有误：应至少有1行",
-                                                                               new Exception())),
-                                            ErrType = ErrorType.UrlParseError
-                                        });
-                else
-                    throw new ReqUrlException("XHR 格式有误：应至少有1行", new Exception());
+                HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                ReqUrlException("XHR 格式有误：应至少有1行",
+                                                new Exception()), ErrorType.UrlParseError);
             }
 
             string HTTPFirst = linesOfXHR.First();
@@ -499,23 +547,16 @@ namespace PyLibSharp.Requests
             }
             catch (Exception ex)
             {
-                if (Params.UseHandler)
-                    ReqExceptionHandler(null,
-                                        new AggregateExceptionArgs()
-                                        {
-                                            AggregateException =
-                                                new AggregateException(new
-                                                                           ReqUrlException("XHR 格式有误：第一行格式有误", ex)),
-                                            ErrType = ErrorType.UrlParseError
-                                        });
-                else
-                    throw new ReqUrlException("XHR 格式有误：第一行格式有误", ex);
+                HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                ReqUrlException("XHR 格式有误：第一行格式有误",
+                                                ex), ErrorType.UrlParseError);
             }
 
 
             Dictionary<string, string>            headerAndKey        = new Dictionary<string, string>();
             Dictionary<HttpRequestHeader, string> defaultHeaderAndKey = new Dictionary<HttpRequestHeader, string>();
             string                                host                = "";
+            //解析每一行 XHR
             linesOfXHR.ForEach(i =>
                                {
                                    string currLine = (i.EndsWith("\r") ? i.Trim().TrimEnd('\r') : i.Trim());
@@ -558,18 +599,9 @@ namespace PyLibSharp.Requests
 
             if (host == "")
             {
-                if (Params.UseHandler)
-                    ReqExceptionHandler(null,
-                                        new AggregateExceptionArgs()
-                                        {
-                                            AggregateException =
-                                                new AggregateException(new
-                                                                           ReqUrlException("XHR 格式有误：未指定目标服务器 Host",
-                                                                               new Exception())),
-                                            ErrType = ErrorType.UrlParseError
-                                        });
-                else
-                    throw new ReqUrlException("XHR 格式有误：未指定目标服务器 Host", new Exception());
+                HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                ReqUrlException("XHR 格式有误：未指定目标服务器 Host",
+                                                new Exception()), ErrorType.UrlParseError);
             }
 
 
@@ -721,11 +753,13 @@ namespace PyLibSharp.Requests
         {
             //不能直接使用GB2312，必须先注册
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
             if (string.IsNullOrEmpty(Url))
             {
                 throw new ArgumentNullException(nameof(Url), new Exception("URL 不可为空"));
             }
 
+            //检查错误捕捉器合法性
             if (Params.UseHandler)
             {
                 if (ReqExceptionHandler == null)
@@ -744,11 +778,13 @@ namespace PyLibSharp.Requests
             }
 
             HttpWebRequest request = null;
+
             //参数处理部分
             string paramStr =
                 String.Join("&",
                             Params.Params.Select(i => HttpUtility.UrlEncode(i.Key) + "=" +
                                                       HttpUtility.UrlEncode(i.Value)));
+            //自动判断 Post 类型
             if (Params.PostParamsType == PostType.none)
             {
                 if (Params.PostContent != null)
@@ -780,11 +816,13 @@ namespace PyLibSharp.Requests
 
             try
             {
+                //解析 Url，产生必要的报错
                 Uri urlToSend = new Uri(Url);
 
 
                 if (Method == "GET")
                 {
+                    //如果是 GET 请求，需要拼接参数到 URL 上
                     var urlParsed = Url.Contains("?") ? Url.Split('?')[0] : Url;
                     if (paramStr == "")
                     {
@@ -814,24 +852,25 @@ namespace PyLibSharp.Requests
             }
             catch (Exception ex)
             {
-                if (Params.UseHandler)
-                    ReqExceptionHandler(null,
-                                        new AggregateExceptionArgs()
-                                        {
-                                            AggregateException =
-                                                new AggregateException(new
-                                                                           ReqUrlException("构造 URL 时发生错误，请检查 URL 格式和请求参数",
-                                                                               ex)),
-                                            ErrType = ErrorType.UrlParseError
-                                        });
-                else
-                    throw new ReqUrlException("构造 URL 时发生错误，请检查 URL 格式和请求参数", ex);
+                HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                ReqUrlException("构造 URL 时发生错误，请检查 URL 格式和请求参数",
+                                                ex), ErrorType.UrlParseError);
             }
 
 
             request.Method  = Method;
             request.Timeout = Params.Timeout;
             request.Proxy   = Params.ProxyToUse;
+
+            //是否检查 SSL 证书
+            if (!Params.isCheckSSLCert)
+            {
+                ServicePointManager.ServerCertificateValidationCallback =
+                    new RemoteCertificateValidationCallback(CheckValidationResult);
+                request.ProtocolVersion              = HttpVersion.Version10;
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls;
+            }
+
 
             try
             {
@@ -854,17 +893,22 @@ namespace PyLibSharp.Requests
                     Params.Header.Add(HttpRequestHeader.Accept,
                                       "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
                 }
+
                 if (Method != "GET")
                 {
+                    //附加 Cookies
                     var           cookieList = Utils.GetAllCookies(Params.Cookies);
                     StringBuilder sb         = new StringBuilder();
+                    //必须手动拼接，否则 POST 等请求带不出 Cookies
                     foreach (Cookie o in cookieList)
                     {
                         sb.Append(o.Name + "=" + o.Value + ";");
                     }
+
                     Params.Header.Add(HttpRequestHeader.Cookie, sb.ToString());
                 }
 
+                //读取参数指定的头部，正确写入 request 属性
                 foreach (KeyValuePair<HttpRequestHeader, string> header in Params.Header)
                 {
                     switch (header.Key)
@@ -927,16 +971,9 @@ namespace PyLibSharp.Requests
             }
             catch (Exception ex)
             {
-                if (Params.UseHandler)
-                    ReqExceptionHandler(null,
-                                        new AggregateExceptionArgs()
-                                        {
-                                            AggregateException =
-                                                new AggregateException(new ReqHeaderException("构造 HTTP 头部时发生错误", ex)),
-                                            ErrType = ErrorType.HTTPRequestHeaderError
-                                        });
-                else
-                    throw new ReqHeaderException("构造 HTTP 头部时发生错误", ex);
+                HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                ReqHeaderException("构造 HTTP 头部时发生错误",
+                                                   ex), ErrorType.HTTPRequestHeaderError);
             }
 
 
@@ -955,26 +992,16 @@ namespace PyLibSharp.Requests
             {
                 using (Stream stream = request.GetRequestStream())
                 {
+                    //判断 POST 类型
                     switch (Params.PostParamsType)
                     {
                         case PostType.http_content:
                             if (Params.PostContent == null)
                             {
-                                if (Params.UseHandler)
-                                    ReqExceptionHandler(null,
-                                                        new AggregateExceptionArgs()
-                                                        {
-                                                            AggregateException =
-                                                                new AggregateException(new
-                                                                    ReqRequestException("以 HttpContent 类型 POST 时，HttpContent 参数未设置或为空",
-                                                                        new ArgumentNullException(nameof(
-                                                                            Params)))),
-                                                            ErrType = ErrorType.ArgumentNull
-                                                        });
-                                else
-                                    throw new
-                                        ReqRequestException("以 HttpContent 类型 POST 时，HttpContent 参数未设置或为空",
-                                                            new ArgumentNullException(nameof(Params)));
+                                HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                                ReqHeaderException("以 HttpContent 类型 POST 时，HttpContent 参数未设置或为空",
+                                                                   new ArgumentNullException(nameof(Params))),
+                                            ErrorType.ArgumentNull);
                             }
 
                             request.ContentType = Params.PostContent.Headers.ContentType + ";charset=" +
@@ -986,21 +1013,10 @@ namespace PyLibSharp.Requests
                         case PostType.x_www_form_urlencoded:
                             if (string.IsNullOrEmpty(paramStr))
                             {
-                                if (Params.UseHandler)
-                                    ReqExceptionHandler(null,
-                                                        new AggregateExceptionArgs()
-                                                        {
-                                                            AggregateException =
-                                                                new AggregateException(new
-                                                                    ReqRequestException("以 application/x-www-form-urlencoded 类型 POST 时，Params 参数未设置或为空",
-                                                                        new ArgumentNullException(nameof(
-                                                                            Params)))),
-                                                            ErrType = ErrorType.ArgumentNull
-                                                        });
-                                else
-                                    throw new
-                                        ReqRequestException("以 application/x-www-form-urlencoded 类型 POST 时，Params 参数未设置或为空",
-                                                            new ArgumentNullException(nameof(Params)));
+                                HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                                ReqHeaderException("以 application/x-www-form-urlencoded 类型 POST 时，Params 参数未设置或为空",
+                                                                   new ArgumentNullException(nameof(Params))),
+                                            ErrorType.ArgumentNull);
                             }
 
                             request.ContentType =
@@ -1014,21 +1030,10 @@ namespace PyLibSharp.Requests
                         case PostType.form_data:
                             if (Params.PostMultiPart is null)
                             {
-                                if (Params.UseHandler)
-                                    ReqExceptionHandler(null,
-                                                        new AggregateExceptionArgs()
-                                                        {
-                                                            AggregateException =
-                                                                new AggregateException(new
-                                                                    ReqRequestException("以 multipart/formdata 类型 POST 时，PostMultiPart 参数未设置或为空",
-                                                                        new
-                                                                            ArgumentNullException("PostMultiPart"))),
-                                                            ErrType = ErrorType.ArgumentNull
-                                                        });
-                                else
-                                    throw new
-                                        ReqRequestException("以 multipart/formdata 类型 POST 时，PostMultiPart 参数未设置或为空",
-                                                            new ArgumentNullException("PostMultiPart"));
+                                HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                                ReqHeaderException("以 multipart/formdata 类型 POST 时，PostMultiPart 参数未设置或为空",
+                                                                   new ArgumentNullException("PostMultiPart")),
+                                            ErrorType.ArgumentNull);
                             }
 
                             var dat  = Params.PostMultiPart;
@@ -1044,20 +1049,10 @@ namespace PyLibSharp.Requests
                         case PostType.raw:
                             if (Params.PostRawData is null || Params.PostRawData.Length == 0)
                             {
-                                if (Params.UseHandler)
-                                    ReqExceptionHandler(null,
-                                                        new AggregateExceptionArgs()
-                                                        {
-                                                            AggregateException =
-                                                                new AggregateException(new
-                                                                    ReqRequestException("以 application/x-www-form-urlencoded 类型 POST 时，Params 参数未设置或为空",
-                                                                        new ArgumentNullException(nameof(
-                                                                            Params)))),
-                                                            ErrType = ErrorType.ArgumentNull
-                                                        });
-                                else
-                                    throw new ReqRequestException("以 Raw 类型 POST 时，PostRawData 参数未设置或为空",
-                                                                  new ArgumentNullException("RawPostParams"));
+                                HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                                ReqHeaderException("以 Raw 类型 POST 时，PostRawData 参数未设置或为空",
+                                                                   new ArgumentNullException("PostRawData")),
+                                            ErrorType.ArgumentNull);
                             }
 
 
@@ -1068,20 +1063,10 @@ namespace PyLibSharp.Requests
                         case PostType.json:
                             if (Params.PostJson == null)
                             {
-                                if (Params.UseHandler)
-                                    ReqExceptionHandler(null,
-                                                        new AggregateExceptionArgs()
-                                                        {
-                                                            AggregateException =
-                                                                new AggregateException(new
-                                                                    ReqRequestException("以 Json 类型 POST 时，PostJson 参数未设置或为空",
-                                                                        new
-                                                                            ArgumentNullException("PostJson"))),
-                                                            ErrType = ErrorType.ArgumentNull
-                                                        });
-                                else
-                                    throw new ReqRequestException("以 Json 类型 POST 时，PostJson 参数未设置或为空",
-                                                                  new ArgumentNullException("PostJson"));
+                                HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                                ReqHeaderException("以 Json 类型 POST 时，PostJson 参数未设置或为空",
+                                                                   new ArgumentNullException("PostJson")),
+                                            ErrorType.ArgumentNull);
                             }
 
                             request.ContentType = "application/json;charset=" + Params.PostEncoding.WebName;
@@ -1132,18 +1117,9 @@ namespace PyLibSharp.Requests
 
                     if (responseTask.IsCanceled)
                     {
-                        if (Params.UseHandler)
+                        // HandleError(Params.UseHandler, ReqExceptionHandler, new
+                        //                 ReqRequestException("用户主动取消 HTTP 请求", ErrorType.UserCancelled), ErrorType.UserCancelled);
 
-                            ReqExceptionHandler(null,
-                                                new AggregateExceptionArgs()
-                                                {
-                                                    AggregateException =
-                                                        new
-                                                            AggregateException(new
-                                                                                   ReqRequestException("用户主动取消 HTTP 请求",
-                                                                                       ErrorType.UserCancelled)),
-                                                    ErrType = ErrorType.UserCancelled
-                                                });
                         return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
                     }
 
@@ -1151,74 +1127,43 @@ namespace PyLibSharp.Requests
                 }
                 catch (WebException ex)
                 {
+                    //状态码错误
                     if (ex.Status == WebExceptionStatus.ProtocolError)
                     {
                         if (Params.IsThrowErrorForStatusCode)
                         {
-                            if (Params.UseHandler)
-
-                                ReqExceptionHandler(null,
-                                                    new AggregateExceptionArgs()
-                                                    {
-                                                        AggregateException =
-                                                            new
-                                                                AggregateException(new
-                                                                    ReqRequestException("HTTP 状态码指示请求发生错误，状态为：" +
-                                                                        (int) ((HttpWebResponse) ex
-                                                                            .Response).StatusCode +
-                                                                        " "                       +
-                                                                        ((HttpWebResponse) ex
-                                                                            .Response).StatusCode,
-                                                                        ErrorType
-                                                                            .HTTPStatusCodeError)),
-                                                        ErrType = ErrorType.HTTPStatusCodeError
-                                                    });
-                            else
-                                throw new ReqRequestException("HTTP 状态码指示请求发生错误，状态为："                          +
-                                                              (int) ((HttpWebResponse) ex.Response).StatusCode + " " +
-                                                              ((HttpWebResponse) ex.Response).StatusCode,
-                                                              ErrorType.HTTPStatusCodeError);
+                            HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                            ReqResponseException("HTTP 状态码指示请求发生错误，状态为：" +
+                                                                 (int) ((HttpWebResponse) ex
+                                                                     .Response).StatusCode +
+                                                                 " "                       +
+                                                                 ((HttpWebResponse) ex
+                                                                     .Response).StatusCode,
+                                                                 ErrorType
+                                                                     .HTTPStatusCodeError),
+                                        ErrorType.HTTPStatusCodeError);
                         }
-
                     }
+                    //超时
                     else if (ex.Status == WebExceptionStatus.Timeout)
                     {
                         if (Params.IsThrowErrorForTimeout)
                         {
-                            if (Params.UseHandler)
-
-                                ReqExceptionHandler(null,
-                                                    new AggregateExceptionArgs()
-                                                    {
-                                                        AggregateException =
-                                                            new
-                                                                AggregateException(new
-                                                                    ReqRequestException("HTTP 请求超时",
-                                                                        ErrorType.HTTPRequestTimeout)),
-                                                        ErrType = ErrorType.HTTPRequestTimeout
-                                                    });
-                            else
-                                throw new ReqRequestException("HTTP 请求超时", ErrorType.HTTPRequestTimeout);
+                            HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                            ReqResponseException("HTTP 请求超时",
+                                                                 ErrorType
+                                                                     .HTTPRequestTimeout),
+                                        ErrorType.HTTPRequestTimeout);
                         }
 
                         return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
                     }
+                    //其他未知错误
                     else
                     {
-                        if (Params.UseHandler)
-
-                            ReqExceptionHandler(null,
-                                                new AggregateExceptionArgs()
-                                                {
-                                                    AggregateException =
-                                                        new
-                                                            AggregateException(new
-                                                                                   ReqRequestException("HTTP 请求时发生错误。",
-                                                                                       ex)),
-                                                    ErrType = ErrorType.HTTPRequestError
-                                                });
-                        else
-                            throw new ReqRequestException("HTTP 请求时发生错误", ex);
+                        HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                        ReqResponseException("HTTP 请求时发生错误", ex),
+                                    ErrorType.HTTPRequestError);
                     }
 
                     response = (HttpWebResponse) ex.Response;
@@ -1238,11 +1183,13 @@ namespace PyLibSharp.Requests
                 //                      Encoding.GetEncoding(response.CharacterSet ??
                 //                                           throw new ReqResponseException("请求无响应")));
                 //
+
                 //流转储
                 byte[] buffer = new byte[bufferSize];
                 int count =
                     await (myResponseStream ?? throw new ReqResponseException("请求无响应", ErrorType.HTTPRequestTimeout))
                         .ReadAsync(buffer, 0, bufferSize);
+
                 while (count > 0)
                 {
                     responseStream.Write(buffer, 0, count);
@@ -1266,7 +1213,7 @@ namespace PyLibSharp.Requests
                     responseEncoding = Encoding.UTF8;
                 }
 
-                //通过HTML头部的Meta判断编码
+                //通过HTML头部的Meta tag判断编码
                 if (Params.IsUseHtmlMetaEncoding &&
                     response.ContentType.ToLower().IndexOf("text/html", StringComparison.Ordinal) != -1)
                 {
@@ -1288,16 +1235,9 @@ namespace PyLibSharp.Requests
             }
             catch (Exception ex)
             {
-                if (Params.UseHandler)
-                    ReqExceptionHandler(null,
-                                        new AggregateExceptionArgs()
-                                        {
-                                            AggregateException =
-                                                new AggregateException(new ReqResponseException("请求时发生错误", ex)),
-                                            ErrType = ErrorType.Other
-                                        });
-                else
-                    throw new ReqResponseException("请求时发生错误", ex);
+                HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                ReqResponseException("HTTP 请求或解析响应时发生未知错误", ex),
+                            ErrorType.Other);
             }
 
             //使用Finally将会导致不弹出错误

@@ -8,14 +8,15 @@
 
 Use. Net to encapsulate some common functions according to the design idea of some Python libraries</Description>
     <Authors>xiaohe321</Authors>
-    <Version>1.1.8</Version>
+    <Version>1.1.9</Version>
     <Company />
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/xh321/PyLibSharp</PackageProjectUrl>
     <RepositoryUrl></RepositoryUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <NeutralLanguage>zh-CN</NeutralLanguage>
-    <PackageReleaseNotes>修正IsThrowErrorForStatusCode参数无效</PackageReleaseNotes>
+    <PackageReleaseNotes>修复非GET情况下Cookie带不上的情况
+修正响应对象中的Cookie只带有新增Cookie的问题</PackageReleaseNotes>
     <PackageTags>request network</PackageTags>
   </PropertyGroup>
 

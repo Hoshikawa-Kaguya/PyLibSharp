@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Net;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace PyLibSharp.Requests
 {
