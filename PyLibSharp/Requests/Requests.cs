@@ -7,8 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -178,7 +176,7 @@ namespace PyLibSharp.Requests
     }
 
     /// <summary>
-    /// 若要让字典支持重复的键，请实例化本类并传入字典的构造函数。
+    /// 若要让字典支持重复的键，请实例化本类并传入到字典的构造函数中。
     /// </summary>
     public class ReqRepeatable : IEqualityComparer<string>
     {
@@ -196,7 +194,7 @@ namespace PyLibSharp.Requests
     /// <summary>
     /// 储存 HTTP 响应的基本信息。
     /// </summary>
-    public class ReqResponse:IEnumerable<char>
+    public class ReqResponse : IEnumerable<char>
     {
         /// <summary>
         /// 获取 HTTP 响应转储的原始字节流。
@@ -263,13 +261,12 @@ namespace PyLibSharp.Requests
                 // }
                 try
                 {
-                    return (JObject)JsonConvert.DeserializeObject(Text);
+                    return (JObject) JsonConvert.DeserializeObject(Text);
                 }
                 catch
                 {
                     return JArray.Parse(Text ?? "[]")[0].ToObject<JObject>();
                 }
-                
             }
             catch (Exception ex)
             {
@@ -301,7 +298,9 @@ namespace PyLibSharp.Requests
             }
             catch (Exception ex)
             {
-                throw new ReqResponseParseException("JSON 解析出错，无法解析为类型："+typeof(T)+"。请确保响应为 JSON 格式及与类型匹配: " + ex.Message, ex);
+                throw new
+                    ReqResponseParseException("JSON 解析出错，无法解析为类型：" + typeof(T) + "。请确保响应为 JSON 格式及与类型匹配: " + ex.Message,
+                                              ex);
             }
         }
 
@@ -503,46 +502,6 @@ namespace PyLibSharp.Requests
             public ErrorType          ErrType            { get; set; }
         }
 
-        /// <summary>
-        /// 通用错误处理函数
-        /// </summary>
-        /// <param name="useHandler">是否使用捕捉器</param>
-        /// <param name="handler">捕捉器</param>
-        /// <param name="innerException">内部错误</param>
-        /// <param name="errType">错误类型</param>
-        public static void HandleError(bool useHandler, EventHandler<AggregateExceptionArgs> handler,
-                                       Exception innerException, ErrorType errType)
-        {
-            if (useHandler)
-            {
-                handler?.Invoke(null,
-                                new AggregateExceptionArgs()
-                                {
-                                    AggregateException =
-                                        new AggregateException(innerException),
-                                    ErrType = errType
-                                });
-            }
-            else
-            {
-                throw innerException;
-            }
-        }
-
-        /// <summary>
-        /// HTTPS 不检查证书
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="certificate"></param>
-        /// <param name="chain"></param>
-        /// <param name="errors"></param>
-        /// <returns></returns>
-        private static bool CheckValidationResult(object sender, X509Certificate certificate, X509Chain chain,
-                                                  SslPolicyErrors errors)
-        {
-            return true; //总是接受
-        }
-
         public static ReqResponse XHR(string XHRData)
         {
             return XHRBase(XHRData, new ReqParams()).Result;
@@ -583,9 +542,9 @@ namespace PyLibSharp.Requests
 
             if (!linesOfXHR.Any())
             {
-                HandleError(Params.UseHandler, ReqExceptionHandler, new
-                                ReqUrlException("XHR 格式有误：应至少有1行",
-                                                new Exception()), ErrorType.UrlParseError);
+                Utils.HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                      ReqUrlException("XHR 格式有误：应至少有1行",
+                                                      new Exception()), ErrorType.UrlParseError);
             }
 
             string HTTPFirst = linesOfXHR.First();
@@ -601,9 +560,9 @@ namespace PyLibSharp.Requests
             }
             catch (Exception ex)
             {
-                HandleError(Params.UseHandler, ReqExceptionHandler, new
-                                ReqUrlException("XHR 格式有误：第一行格式有误",
-                                                ex), ErrorType.UrlParseError);
+                Utils.HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                      ReqUrlException("XHR 格式有误：第一行格式有误",
+                                                      ex), ErrorType.UrlParseError);
             }
 
 
@@ -653,9 +612,9 @@ namespace PyLibSharp.Requests
 
             if (host == "")
             {
-                HandleError(Params.UseHandler, ReqExceptionHandler, new
-                                ReqUrlException("XHR 格式有误：未指定目标服务器 Host",
-                                                new Exception()), ErrorType.UrlParseError);
+                Utils.HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                      ReqUrlException("XHR 格式有误：未指定目标服务器 Host",
+                                                      new Exception()), ErrorType.UrlParseError);
             }
 
 
@@ -906,9 +865,9 @@ namespace PyLibSharp.Requests
             }
             catch (Exception ex)
             {
-                HandleError(Params.UseHandler, ReqExceptionHandler, new
-                                ReqUrlException("构造 URL 时发生错误，请检查 URL 格式和请求参数",
-                                                ex), ErrorType.UrlParseError);
+                Utils.HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                      ReqUrlException("构造 URL 时发生错误，请检查 URL 格式和请求参数",
+                                                      ex), ErrorType.UrlParseError);
             }
 
 
@@ -920,11 +879,10 @@ namespace PyLibSharp.Requests
             if (!Params.isCheckSSLCert)
             {
                 ServicePointManager.ServerCertificateValidationCallback =
-                    new RemoteCertificateValidationCallback(CheckValidationResult);
+                    (i, j, k, l) => true;
                 request.ProtocolVersion              = HttpVersion.Version10;
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls;
             }
-
 
             try
             {
@@ -1025,9 +983,9 @@ namespace PyLibSharp.Requests
             }
             catch (Exception ex)
             {
-                HandleError(Params.UseHandler, ReqExceptionHandler, new
-                                ReqHeaderException("构造 HTTP 头部时发生错误",
-                                                   ex), ErrorType.HTTPRequestHeaderError);
+                Utils.HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                      ReqHeaderException("构造 HTTP 头部时发生错误",
+                                                         ex), ErrorType.HTTPRequestHeaderError);
             }
 
 
@@ -1052,10 +1010,10 @@ namespace PyLibSharp.Requests
                         case PostType.http_content:
                             if (Params.PostContent == null)
                             {
-                                HandleError(Params.UseHandler, ReqExceptionHandler, new
-                                                ReqHeaderException("以 HttpContent 类型 POST 时，HttpContent 参数未设置或为空",
-                                                                   new ArgumentNullException(nameof(Params))),
-                                            ErrorType.ArgumentNull);
+                                Utils.HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                                      ReqHeaderException("以 HttpContent 类型 POST 时，HttpContent 参数未设置或为空",
+                                                                         new ArgumentNullException(nameof(Params))),
+                                                  ErrorType.ArgumentNull);
                             }
 
                             request.ContentType = Params.PostContent.Headers.ContentType + ";charset=" +
@@ -1067,10 +1025,10 @@ namespace PyLibSharp.Requests
                         case PostType.x_www_form_urlencoded:
                             if (string.IsNullOrEmpty(paramStr))
                             {
-                                HandleError(Params.UseHandler, ReqExceptionHandler, new
-                                                ReqHeaderException("以 application/x-www-form-urlencoded 类型 POST 时，Params 参数未设置或为空",
-                                                                   new ArgumentNullException(nameof(Params))),
-                                            ErrorType.ArgumentNull);
+                                Utils.HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                                      ReqHeaderException("以 application/x-www-form-urlencoded 类型 POST 时，Params 参数未设置或为空",
+                                                                         new ArgumentNullException(nameof(Params))),
+                                                  ErrorType.ArgumentNull);
                             }
 
                             request.ContentType =
@@ -1084,10 +1042,10 @@ namespace PyLibSharp.Requests
                         case PostType.form_data:
                             if (Params.PostMultiPart is null)
                             {
-                                HandleError(Params.UseHandler, ReqExceptionHandler, new
-                                                ReqHeaderException("以 multipart/formdata 类型 POST 时，PostMultiPart 参数未设置或为空",
-                                                                   new ArgumentNullException("PostMultiPart")),
-                                            ErrorType.ArgumentNull);
+                                Utils.HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                                      ReqHeaderException("以 multipart/formdata 类型 POST 时，PostMultiPart 参数未设置或为空",
+                                                                         new ArgumentNullException("PostMultiPart")),
+                                                  ErrorType.ArgumentNull);
                             }
 
                             var dat  = Params.PostMultiPart;
@@ -1103,10 +1061,10 @@ namespace PyLibSharp.Requests
                         case PostType.raw:
                             if (Params.PostRawData is null || Params.PostRawData.Length == 0)
                             {
-                                HandleError(Params.UseHandler, ReqExceptionHandler, new
-                                                ReqHeaderException("以 Raw 类型 POST 时，PostRawData 参数未设置或为空",
-                                                                   new ArgumentNullException("PostRawData")),
-                                            ErrorType.ArgumentNull);
+                                Utils.HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                                      ReqHeaderException("以 Raw 类型 POST 时，PostRawData 参数未设置或为空",
+                                                                         new ArgumentNullException("PostRawData")),
+                                                  ErrorType.ArgumentNull);
                             }
 
 
@@ -1117,10 +1075,10 @@ namespace PyLibSharp.Requests
                         case PostType.json:
                             if (Params.PostJson == null)
                             {
-                                HandleError(Params.UseHandler, ReqExceptionHandler, new
-                                                ReqHeaderException("以 Json 类型 POST 时，PostJson 参数未设置或为空",
-                                                                   new ArgumentNullException("PostJson")),
-                                            ErrorType.ArgumentNull);
+                                Utils.HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                                      ReqHeaderException("以 Json 类型 POST 时，PostJson 参数未设置或为空",
+                                                                         new ArgumentNullException("PostJson")),
+                                                  ErrorType.ArgumentNull);
                             }
 
                             request.ContentType = "application/json;charset=" + Params.PostEncoding.WebName;
@@ -1186,16 +1144,16 @@ namespace PyLibSharp.Requests
                     {
                         if (Params.IsThrowErrorForStatusCode)
                         {
-                            HandleError(Params.UseHandler, ReqExceptionHandler, new
-                                            ReqResponseException("HTTP 状态码指示请求发生错误，状态为：" +
-                                                                 (int) ((HttpWebResponse) ex
-                                                                     .Response).StatusCode +
-                                                                 " "                       +
-                                                                 ((HttpWebResponse) ex
-                                                                     .Response).StatusCode,
-                                                                 ErrorType
-                                                                     .HTTPStatusCodeError),
-                                        ErrorType.HTTPStatusCodeError);
+                            Utils.HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                                  ReqResponseException("HTTP 状态码指示请求发生错误，状态为：" +
+                                                                       (int) ((HttpWebResponse) ex
+                                                                           .Response).StatusCode +
+                                                                       " "                       +
+                                                                       ((HttpWebResponse) ex
+                                                                           .Response).StatusCode,
+                                                                       ErrorType
+                                                                           .HTTPStatusCodeError),
+                                              ErrorType.HTTPStatusCodeError);
                         }
                     }
                     //超时
@@ -1203,11 +1161,11 @@ namespace PyLibSharp.Requests
                     {
                         if (Params.IsThrowErrorForTimeout)
                         {
-                            HandleError(Params.UseHandler, ReqExceptionHandler, new
-                                            ReqResponseException("HTTP 请求超时",
-                                                                 ErrorType
-                                                                     .HTTPRequestTimeout),
-                                        ErrorType.HTTPRequestTimeout);
+                            Utils.HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                                  ReqResponseException("HTTP 请求超时",
+                                                                       ErrorType
+                                                                           .HTTPRequestTimeout),
+                                              ErrorType.HTTPRequestTimeout);
                         }
 
                         return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
@@ -1215,9 +1173,9 @@ namespace PyLibSharp.Requests
                     //其他未知错误
                     else
                     {
-                        HandleError(Params.UseHandler, ReqExceptionHandler, new
-                                        ReqResponseException("HTTP 请求时发生错误", ex),
-                                    ErrorType.HTTPRequestError);
+                        Utils.HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                              ReqResponseException("HTTP 请求时发生错误", ex),
+                                          ErrorType.HTTPRequestError);
                     }
 
                     response = (HttpWebResponse) ex.Response;
@@ -1289,9 +1247,9 @@ namespace PyLibSharp.Requests
             }
             catch (Exception ex)
             {
-                HandleError(Params.UseHandler, ReqExceptionHandler, new
-                                ReqResponseException("HTTP 请求或解析响应时发生未知错误", ex),
-                            ErrorType.Other);
+                Utils.HandleError(Params.UseHandler, ReqExceptionHandler, new
+                                      ReqResponseException("HTTP 请求或解析响应时发生未知错误", ex),
+                                  ErrorType.Other);
             }
 
             //使用Finally将会导致不弹出错误

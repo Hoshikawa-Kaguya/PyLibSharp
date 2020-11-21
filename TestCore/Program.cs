@@ -14,6 +14,12 @@ namespace TestCore
 
             Console.WriteLine("结束");
             Console.WriteLine(str.Json());
+
+            foreach (char c in str)
+            {
+                Console.Write(c);
+            }
+
             Console.ReadKey();
         }
         private static void Requests_ReqExceptionHandler(object sender, Requests.AggregateExceptionArgs e)

@@ -1,13 +1,72 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Net;
 using System.Reflection;
-using System.Runtime.InteropServices;
+using System.Text;
 
 namespace PyLibSharp.Requests
 {
     public static class Utils
     {
+
+        /// <summary>
+        /// 链式获取父错误的每一级 InnerException，并作为 List 返回
+        /// </summary>
+        /// <param name="exOuter">父级错误</param>
+        /// <returns></returns>
+        public static List<Exception> GetInnerExceptionList(Exception exOuter)
+        {
+            List<Exception> lstRet = new List<Exception>();
+            while (exOuter != null)
+            {
+                lstRet.Add(exOuter);
+                exOuter = exOuter.InnerException;
+            }
+            return lstRet;
+        }
+
+        /// <summary>
+        /// 链式获取父错误的每一级 InnerException 的错误消息，并拼接为字符串返回
+        /// <para>每一行代表一级的错误消息，从上到下依次深入</para>
+        /// </summary>
+        /// <param name="exOuter">父级错误</param>
+        /// <returns></returns>
+        public static string GetInnerExceptionMessages(Exception exOuter)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            GetInnerExceptionList(exOuter).ForEach(i => sb.AppendLine(i.Message));
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// 通用错误处理函数
+        /// </summary>
+        /// <param name="useHandler">是否使用捕捉器</param>
+        /// <param name="handler">捕捉器</param>
+        /// <param name="innerException">内部错误</param>
+        /// <param name="errType">错误类型</param>
+        internal static void HandleError(bool useHandler, EventHandler<Requests.AggregateExceptionArgs> handler,
+                                       Exception innerException, ErrorType errType)
+        {
+            if (useHandler)
+            {
+                handler?.Invoke(null,
+                                new Requests.AggregateExceptionArgs()
+                                {
+                                    AggregateException =
+                                        new AggregateException(innerException),
+                                    ErrType = errType
+                                });
+            }
+            else
+            {
+                throw innerException;
+            }
+        }
+
         public static CookieCollection GetAllCookies(CookieContainer cookieJar)
         {
             if (!(cookieJar is null) && cookieJar.Count > 0)
