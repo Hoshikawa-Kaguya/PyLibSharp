@@ -1,7 +1,5 @@
 ﻿using PyLibSharp.Requests;
 using System;
-using System.Net.Http;
-using System.Text;
 
 namespace TestCore
 {
@@ -9,10 +7,13 @@ namespace TestCore
     {
         static void Main(string[] args)
         {
-            var str = Requests.GetAsync("https://124.156.146.248/setu/");
+            var str = Requests.Get("https://124.156.146.248/setu/",new ReqParams()
+            {
+                Timeout = 3000
+            });
 
             Console.WriteLine("结束");
-            Console.WriteLine(str.Result.Json());
+            Console.WriteLine(str.Json());
             Console.ReadKey();
         }
         private static void Requests_ReqExceptionHandler(object sender, Requests.AggregateExceptionArgs e)

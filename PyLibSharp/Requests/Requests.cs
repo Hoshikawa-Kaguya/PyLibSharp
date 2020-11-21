@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -195,7 +196,7 @@ namespace PyLibSharp.Requests
     /// <summary>
     /// 储存 HTTP 响应的基本信息。
     /// </summary>
-    public class ReqResponse
+    public class ReqResponse:IEnumerable<char>
     {
         /// <summary>
         /// 获取 HTTP 响应转储的原始字节流。
@@ -260,12 +261,47 @@ namespace PyLibSharp.Requests
                 // {
                 //     throw new WarningException("HTTP 响应中的 Content-Type 并非 JSON 格式，响应的数据有可能并不是 JSON");
                 // }
-
-                return JArray.Parse(Text ?? "[]")[0].ToObject<JObject>();
+                try
+                {
+                    return (JObject)JsonConvert.DeserializeObject(Text);
+                }
+                catch
+                {
+                    return JArray.Parse(Text ?? "[]")[0].ToObject<JObject>();
+                }
+                
             }
             catch (Exception ex)
             {
                 throw new ReqResponseParseException("JSON 解析出错，请确保响应为 JSON 格式: " + ex.Message, ex);
+            }
+        }
+
+        /// <summary>
+        /// 将结果中的 Text（将使用 <see langword="Encode"></see> 参数所代表的编码进行解码）解析为指定类型的对象。
+        /// </summary>
+        /// <returns>解析后的对象</returns>
+        public T ToObject<T>()
+        {
+            try
+            {
+                // if (!ContentType.Contains("application/json")) 
+                // {
+                //     throw new WarningException("HTTP 响应中的 Content-Type 并非 JSON 格式，响应的数据有可能并不是 JSON");
+                // }
+
+                try
+                {
+                    return JsonConvert.DeserializeObject<T>(Text);
+                }
+                catch
+                {
+                    return JArray.Parse(Text ?? "[]")[0].ToObject<T>();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new ReqResponseParseException("JSON 解析出错，无法解析为类型："+typeof(T)+"。请确保响应为 JSON 格式及与类型匹配: " + ex.Message, ex);
             }
         }
 
@@ -276,6 +312,24 @@ namespace PyLibSharp.Requests
         public override string ToString()
         {
             return Text;
+        }
+
+        /// <summary>
+        /// 获取返回值文本的迭代器
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerator<char> GetEnumerator()
+        {
+            return Text.GetEnumerator();
+        }
+
+        /// <summary>
+        /// 获取返回值文本的迭代器
+        /// </summary>
+        /// <returns></returns>
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return Text.GetEnumerator();
         }
     }
 
