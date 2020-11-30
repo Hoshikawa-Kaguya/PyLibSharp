@@ -124,9 +124,10 @@ namespace PyLibSharp.Requests
         public bool IsThrowErrorForTimeout { get; set; } = true;
 
         /// <summary>
-        /// 是否检查 HTTPS 证书的合法性，默认不检查
+        /// 是否检查 HTTPS 证书的合法性，默认检查，以避免中间人等不安全因素
+        /// <para>如非必要请不要设为false</para>
         /// </summary>
-        public bool isCheckSSLCert { get; set; } = false;
+        public bool isCheckSSLCert { get; set; } = true;
 
         /// <summary>
         /// 设置 HTTP 连接等待的超时时间（单位毫秒/ms）。
@@ -888,8 +889,6 @@ namespace PyLibSharp.Requests
             {
                 ServicePointManager.ServerCertificateValidationCallback =
                     (i, j, k, l) => true;
-                request.ProtocolVersion              = HttpVersion.Version10;
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls;
             }
 
             try

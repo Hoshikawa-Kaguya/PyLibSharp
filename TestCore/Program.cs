@@ -7,9 +7,10 @@ namespace TestCore
     {
         static void Main(string[] args)
         {
-            var str = Requests.Get("https://124.156.146.248/setu/",new ReqParams()
+            var str = Requests.Get("https://124.156.146.248/setu/", new ReqParams()
             {
-                Timeout = 3000
+                Timeout = 3000,
+                isCheckSSLCert = false
             });
 
             Console.WriteLine("结束");
