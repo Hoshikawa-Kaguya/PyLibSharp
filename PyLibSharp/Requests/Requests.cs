@@ -252,7 +252,7 @@ namespace PyLibSharp.Requests
         /// 将结果中的 Text（将使用 <see langword="Encode"></see> 参数所代表的编码进行解码）解析为 <see langword="Json"></see> 的 JObject。
         /// </summary>
         /// <returns>解析后的 JObject 对象</returns>
-        public JObject Json()
+        public JToken Json()
         {
             try
             {
@@ -260,14 +260,8 @@ namespace PyLibSharp.Requests
                 // {
                 //     throw new WarningException("HTTP 响应中的 Content-Type 并非 JSON 格式，响应的数据有可能并不是 JSON");
                 // }
-                try
-                {
-                    return (JObject) JsonConvert.DeserializeObject(Text);
-                }
-                catch
-                {
-                    return JArray.Parse(Text ?? "[]")[0].ToObject<JObject>();
-                }
+
+                return JToken.Parse(Text).ToObject<JObject>();
             }
             catch (Exception ex)
             {
