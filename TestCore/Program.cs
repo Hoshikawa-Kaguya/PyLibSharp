@@ -7,14 +7,13 @@ namespace TestCore
     {
         static void Main(string[] args)
         {
-            var str = Requests.Get("https://124.156.146.248/setu/", new ReqParams()
+            var str = Requests.Get("https://api.yukari.one/pcr/unit_data.py", new ReqParams()
             {
-                Timeout = 3000,
-                isCheckSSLCert = false
+                Timeout = 3000
             });
 
             Console.WriteLine("结束");
-            Console.WriteLine(str.Json());
+            Console.WriteLine(str);
 
             foreach (string s in str)
             {
