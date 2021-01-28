@@ -892,6 +892,13 @@ namespace PyLibSharp.Requests
                     (i, j, k, l) => true;
             }
 
+            //是否检查 SSL 证书
+            if (!Params.isCheckSSLCert)
+            {
+                ServicePointManager.ServerCertificateValidationCallback =
+                    (i, j, k, l) => true;
+            }
+
             try
             {
                 //头部处理部分
