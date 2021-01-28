@@ -135,6 +135,11 @@ namespace PyLibSharp.Requests
         public int Timeout { get; set; } = 1500;
 
         /// <summary>
+        /// 设置并发连接数（建议1024以下）
+        /// </summary>
+        public int DefaultConnectionLimit { get; set; } = 512;
+
+        /// <summary>
         /// 设置读取 HTTP 响应的缓冲区大小（单位字节/byte）。
         /// </summary>
         public int ReadBufferSize { get; set; } = 1024;
@@ -793,6 +798,7 @@ namespace PyLibSharp.Requests
                 Params = new ReqParams();
             }
 
+            GC.Collect();
             HttpWebRequest request = null;
 
             //参数处理部分
@@ -874,10 +880,11 @@ namespace PyLibSharp.Requests
             }
 
 
-            request.Method  = Method;
-            request.Timeout = Params.Timeout;
-            request.Proxy   = Params.ProxyToUse;
-
+            request.Method                             = Method;
+            request.Timeout                            = Params.Timeout;
+            request.Proxy                              = Params.ProxyToUse;
+            request.ServicePoint.Expect100Continue     = false;
+            ServicePointManager.DefaultConnectionLimit = Params.DefaultConnectionLimit;
             //是否检查 SSL 证书
             if (!Params.isCheckSSLCert)
             {
@@ -907,6 +914,11 @@ namespace PyLibSharp.Requests
                                       "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
                 }
 
+                if (!Params.Header.ContainsKey(HttpRequestHeader.Connection))
+                {
+                    Params.Header.Add(HttpRequestHeader.Connection, "");
+                }
+
                 if (Method != "GET")
                 {
                     //附加 Cookies
@@ -931,7 +943,7 @@ namespace PyLibSharp.Requests
                             break;
                         case HttpRequestHeader.Connection:
                             //request.Connection = header.Value;
-                            if (header.Value == "keep-alive")
+                            if (header.Value.ToLower() == "keep-alive")
                             {
                                 request.KeepAlive = true;
                             }
@@ -942,6 +954,8 @@ namespace PyLibSharp.Requests
 
                             break;
                         case HttpRequestHeader.ContentLength:
+                            //GET忽略此参数
+                            if (Method == "GET") break;
                             if (long.TryParse(header.Value, out long length))
                             {
                                 request.ContentLength = length;
@@ -1259,6 +1273,7 @@ namespace PyLibSharp.Requests
             //     //myStreamReader?.Close();
             //     myResponseStream?.Close();
             // }
+            request?.Abort();
             myResponseStream?.Close();
             return new ReqResponse(responseStream, responseCookieContainer, responseContentType, responseEncoding,
                                    responseStatusCode);
