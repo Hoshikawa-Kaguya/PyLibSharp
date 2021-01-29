@@ -8,15 +8,14 @@
 
 Use. Net to encapsulate some common functions according to the design idea of some Python libraries</Description>
     <Authors>xiaohe321</Authors>
-    <Version>1.2.3</Version>
+    <Version>1.2.4</Version>
     <Company />
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/xh321/PyLibSharp</PackageProjectUrl>
     <RepositoryUrl></RepositoryUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <NeutralLanguage>zh-CN</NeutralLanguage>
-    <PackageReleaseNotes>修改JSON解析方式
-Json函数返回值修改为JToken类型</PackageReleaseNotes>
+    <PackageReleaseNotes>尝试解决某些情况下一直报超时的问题</PackageReleaseNotes>
     <PackageTags>request network</PackageTags>
   </PropertyGroup>
 

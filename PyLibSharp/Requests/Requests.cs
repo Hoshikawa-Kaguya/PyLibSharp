@@ -704,76 +704,75 @@ namespace PyLibSharp.Requests
                         break;
                 }
             }
-
-            return await RequestBase(URL, method, Params, new CancellationTokenSource());
+            return await RequestBase(URL, new HttpMethod(method.ToUpper()), Params, new CancellationTokenSource());
         }
 
         public static ReqResponse Get(string Url)
         {
-            return RequestBase(Url, "GET", new ReqParams(), new CancellationTokenSource()).Result;
+            return RequestBase(Url, HttpMethod.Get, new ReqParams(), new CancellationTokenSource()).Result;
         }
 
         public static ReqResponse Get(string Url, ReqParams Params)
         {
-            return RequestBase(Url, "GET", Params, new CancellationTokenSource()).Result;
+            return RequestBase(Url, HttpMethod.Get, Params, new CancellationTokenSource()).Result;
         }
 
         public static ReqResponse Get(string Url, ReqParams Params, CancellationTokenSource CancelFlag)
         {
-            return RequestBase(Url, "GET", Params, CancelFlag).Result;
+            return RequestBase(Url, HttpMethod.Get, Params, CancelFlag).Result;
         }
 
         public static ReqResponse Post(string Url)
         {
-            return RequestBase(Url, "POST", new ReqParams(), new CancellationTokenSource()).Result;
+            return RequestBase(Url, HttpMethod.Post, new ReqParams(), new CancellationTokenSource()).Result;
         }
 
         public static ReqResponse Post(string Url, ReqParams Params)
         {
-            return RequestBase(Url, "POST", Params, new CancellationTokenSource()).Result;
+            return RequestBase(Url, HttpMethod.Post, Params, new CancellationTokenSource()).Result;
         }
 
         public static ReqResponse Post(string Url, ReqParams Params, CancellationTokenSource CancelFlag)
         {
-            return RequestBase(Url, "POST", Params, CancelFlag).Result;
+            return RequestBase(Url, HttpMethod.Post, Params, CancelFlag).Result;
         }
 
         public static async Task<ReqResponse> GetAsync(string Url)
         {
-            return await RequestBase(Url, "GET", new ReqParams(), new CancellationTokenSource());
+            return await RequestBase(Url, HttpMethod.Get, new ReqParams(), new CancellationTokenSource());
         }
 
         public static async Task<ReqResponse> GetAsync(string Url, ReqParams Params)
         {
-            return await RequestBase(Url, "GET", Params, new CancellationTokenSource());
+            return await RequestBase(Url, HttpMethod.Get, Params, new CancellationTokenSource());
         }
 
         public static async Task<ReqResponse> GetAsync(string Url, ReqParams Params, CancellationTokenSource CancelFlag)
         {
-            return await RequestBase(Url, "GET", Params, CancelFlag);
+            return await RequestBase(Url, HttpMethod.Get, Params, CancelFlag);
         }
 
         public static async Task<ReqResponse> PostAsync(string Url)
         {
-            return await RequestBase(Url, "POST", new ReqParams(), new CancellationTokenSource());
+            return await RequestBase(Url, HttpMethod.Post, new ReqParams(), new CancellationTokenSource());
         }
 
         public static async Task<ReqResponse> PostAsync(string Url, ReqParams Params)
         {
-            return await RequestBase(Url, "POST", Params, new CancellationTokenSource());
+            return await RequestBase(Url, HttpMethod.Post, Params, new CancellationTokenSource());
         }
 
         public static async Task<ReqResponse> PostAsync(string Url, ReqParams Params,
                                                         CancellationTokenSource CancelFlag)
         {
-            return await RequestBase(Url, "POST", Params, CancelFlag);
+            return await RequestBase(Url, HttpMethod.Post, Params, CancelFlag);
         }
 
-        public static async Task<ReqResponse> RequestBase(string Url, string Method, ReqParams Params,
+        public static async Task<ReqResponse> RequestBase(string Url, HttpMethod Method, ReqParams Params,
                                                           CancellationTokenSource CancelFlag)
         {
             //不能直接使用GB2312，必须先注册
-            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+            Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
             if (string.IsNullOrEmpty(Url))
             {
@@ -842,7 +841,7 @@ namespace PyLibSharp.Requests
                 Uri urlToSend = new Uri(Url);
 
 
-                if (Method == "GET")
+                if (Method == HttpMethod.Get)
                 {
                     //如果是 GET 请求，需要拼接参数到 URL 上
                     var urlParsed = Url.Contains("?") ? Url.Split('?')[0] : Url;
@@ -880,7 +879,7 @@ namespace PyLibSharp.Requests
             }
 
 
-            request.Method                             = Method;
+            request.Method                             = Method.Method;
             request.Timeout                            = Params.Timeout;
             request.Proxy                              = Params.ProxyToUse;
             request.ServicePoint.Expect100Continue     = false;
@@ -926,7 +925,7 @@ namespace PyLibSharp.Requests
                     Params.Header.Add(HttpRequestHeader.Connection, "");
                 }
 
-                if (Method != "GET")
+                if (Method != HttpMethod.Get)
                 {
                     //附加 Cookies
                     var           cookieList = Utils.GetAllCookies(Params.Cookies);
@@ -962,7 +961,7 @@ namespace PyLibSharp.Requests
                             break;
                         case HttpRequestHeader.ContentLength:
                             //GET忽略此参数
-                            if (Method == "GET") break;
+                            if (Method == HttpMethod.Get) break;
                             if (long.TryParse(header.Value, out long length))
                             {
                                 request.ContentLength = length;
@@ -1022,7 +1021,7 @@ namespace PyLibSharp.Requests
             CookieContainer responseCookieContainer = Params.Cookies;
 
             //POST 数据写入
-            if (Method == "POST" || Method == "PUT")
+            if (Method == HttpMethod.Post || Method == HttpMethod.Put)
             {
                 using (Stream stream = request.GetRequestStream())
                 {
