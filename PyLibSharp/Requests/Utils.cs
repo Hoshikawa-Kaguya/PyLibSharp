@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 using System.Text;
@@ -9,7 +10,6 @@ namespace PyLibSharp.Requests
 {
     public static class Utils
     {
-
         /// <summary>
         /// 链式获取父错误的每一级 InnerException，并作为 List 返回
         /// </summary>
@@ -23,6 +23,7 @@ namespace PyLibSharp.Requests
                 lstRet.Add(exOuter);
                 exOuter = exOuter.InnerException;
             }
+
             return lstRet;
         }
 
@@ -49,8 +50,14 @@ namespace PyLibSharp.Requests
         /// <param name="innerException">内部错误</param>
         /// <param name="errType">错误类型</param>
         internal static void HandleError(bool useHandler, EventHandler<Requests.AggregateExceptionArgs> handler,
-                                       Exception innerException, ErrorType errType)
+                                         Exception innerException, ErrorType errType)
         {
+            Debug.Print($"Requests库出现错误：({(useHandler ? "使用" : "未使用")}自定义错误捕捉器)" +
+                        $"\r\n报错信息为："                                            +
+                        $"\r\n{GetInnerExceptionMessages(innerException)}"       +
+                        $"\r\n报错堆栈为："                                            +
+                        $"\r\n{innerException.StackTrace}");
+
             if (useHandler)
             {
                 handler?.Invoke(null,
@@ -73,9 +80,9 @@ namespace PyLibSharp.Requests
             {
                 CookieCollection cookieCollection = new CookieCollection();
 
-                Hashtable table = (Hashtable)cookieJar.GetType().InvokeMember("m_domainTable",
+                Hashtable table = (Hashtable) cookieJar.GetType().InvokeMember("m_domainTable",
                                                                                BindingFlags.NonPublic |
-                                                                               BindingFlags.GetField |
+                                                                               BindingFlags.GetField  |
                                                                                BindingFlags.Instance,
                                                                                null,
                                                                                cookieJar,
@@ -83,16 +90,16 @@ namespace PyLibSharp.Requests
 
                 foreach (var tableKey in table.Keys)
                 {
-                    String str_tableKey = (string)tableKey;
+                    String str_tableKey = (string) tableKey;
 
                     if (str_tableKey[0] == '.')
                     {
                         str_tableKey = str_tableKey.Substring(1);
                     }
 
-                    SortedList list = (SortedList)table[tableKey].GetType().InvokeMember("m_list",
+                    SortedList list = (SortedList) table[tableKey].GetType().InvokeMember("m_list",
                         BindingFlags.NonPublic |
-                        BindingFlags.GetField |
+                        BindingFlags.GetField  |
                         BindingFlags.Instance,
                         null,
                         table[tableKey],
@@ -100,7 +107,7 @@ namespace PyLibSharp.Requests
 
                     foreach (var listKey in list.Keys)
                     {
-                        String url = "http://" + str_tableKey + (string)listKey;
+                        String url = "http://" + str_tableKey + (string) listKey;
                         cookieCollection.Add(cookieJar.GetCookies(new Uri(url)));
                     }
                 }
