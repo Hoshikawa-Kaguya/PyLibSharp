@@ -3,11 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30406.217
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PyLibSharp", "PyLibSharp\PyLibSharp.csproj", "{B30CDCE1-7AFC-41EA-8A13-5AC3146F7711}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestCore", "TestCore\TestCore.csproj", "{02D4204E-2BE2-4C04-A634-AC5F9333C97B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestProject", "TestProject\TestProject\TestProject.csproj", "{96634720-1057-4909-AB79-4618FA6127D4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestFramework", "TestProject\TestProject\TestFramework.csproj", "{96634720-1057-4909-AB79-4618FA6127D4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PyLibSharp.Requests", "PyLibSharp.Requests\PyLibSharp.Requests.csproj", "{974B9F2B-D0C6-4544-9500-8B0C826AB35F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PyLibSharp.Common", "PyLibSharp.Common\PyLibSharp.Common.csproj", "{53E16169-2A54-48F9-A3AA-DEF280160B49}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,10 +17,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B30CDCE1-7AFC-41EA-8A13-5AC3146F7711}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B30CDCE1-7AFC-41EA-8A13-5AC3146F7711}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B30CDCE1-7AFC-41EA-8A13-5AC3146F7711}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B30CDCE1-7AFC-41EA-8A13-5AC3146F7711}.Release|Any CPU.Build.0 = Release|Any CPU
 		{02D4204E-2BE2-4C04-A634-AC5F9333C97B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{02D4204E-2BE2-4C04-A634-AC5F9333C97B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{02D4204E-2BE2-4C04-A634-AC5F9333C97B}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -27,6 +25,14 @@ Global
 		{96634720-1057-4909-AB79-4618FA6127D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{96634720-1057-4909-AB79-4618FA6127D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{96634720-1057-4909-AB79-4618FA6127D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{974B9F2B-D0C6-4544-9500-8B0C826AB35F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{974B9F2B-D0C6-4544-9500-8B0C826AB35F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{974B9F2B-D0C6-4544-9500-8B0C826AB35F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{974B9F2B-D0C6-4544-9500-8B0C826AB35F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{53E16169-2A54-48F9-A3AA-DEF280160B49}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53E16169-2A54-48F9-A3AA-DEF280160B49}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53E16169-2A54-48F9-A3AA-DEF280160B49}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53E16169-2A54-48F9-A3AA-DEF280160B49}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -10,7 +10,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PyLibSharp\PyLibSharp.csproj" />
+    <ProjectReference Include="..\PyLibSharp.Common\PyLibSharp.Common.csproj" />
+    <ProjectReference Include="..\PyLibSharp.Requests\PyLibSharp.Requests.csproj" />
   </ItemGroup>
 
 </Project>

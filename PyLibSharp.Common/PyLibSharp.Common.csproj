@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <Authors>xiaohe321</Authors>
+    <Company>xiaohe321</Company>
+    <Description>使用 .Net 根据部分 Python 库的设计思想来封装一些常用功能
+公共库部分
+
+Use. Net to encapsulate some common functions according to the design idea of some Python libraries</Description>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/xh321/PyLibSharp</PackageProjectUrl>
+    <PackageReleaseNotes>修改项目结构，整合命名空间</PackageReleaseNotes>
+    <NeutralLanguage>zh-CN</NeutralLanguage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE.md">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>
