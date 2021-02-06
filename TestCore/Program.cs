@@ -1,6 +1,7 @@
-﻿using PyLibSharp.Requests;
+﻿using PyLibSharp.Common;
+using PyLibSharp.Requests;
 using System;
-using Range = PyLibSharp.Common.Range;
+using System.Collections.Generic;
 
 namespace TestCore
 {
@@ -8,20 +9,11 @@ namespace TestCore
     {
         static void Main(string[] args)
         {
-            var range = Range.range(1, 5, -1)
-                      + Range.range(6, 10, 1);
-            var range2 = Range.range(1,10,1);
-          
-            foreach (int i in range)
+            ConsoleEx.Print(new Dictionary<string,string>()
             {
-                Console.WriteLine(i);
-            }
-            foreach (int i in range2)
-            {
-                Console.WriteLine(i);
-            }
-            Console.WriteLine(range2 == range);
-
+                { "11","22"},
+                { "12","22"}
+            });
             Console.ReadKey();
             // var str = Requests.Get("https://api.yukari.one/setu/", new ReqParams()
             // {
