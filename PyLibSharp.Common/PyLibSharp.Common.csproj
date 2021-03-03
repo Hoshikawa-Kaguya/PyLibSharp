@@ -12,8 +12,14 @@
 Use. Net to encapsulate some common functions according to the design idea of some Python libraries</Description>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/xh321/PyLibSharp</PackageProjectUrl>
-    <PackageReleaseNotes>修改项目结构，整合命名空间</PackageReleaseNotes>
+    <PackageReleaseNotes>修复没有注释</PackageReleaseNotes>
     <NeutralLanguage>zh-CN</NeutralLanguage>
+    <Version>1.0.1</Version>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+    <DocumentationFile>C:\Users\xiaohe321\OneDrive\Programming\CSharp\PyLib#\PyLibSharp\PyLibSharp.Common\PyLibSharp.Common.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

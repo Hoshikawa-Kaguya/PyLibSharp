@@ -103,9 +103,9 @@ namespace PyLibSharp.Requests
         public bool UseHandler { get; set; } = false;
 
         /// <summary>
-        /// 设置是否在结果中转储原始字节流。
+        /// 是否自动关闭输出流，如果设置为true，则 <see langword="OutputStream"></see> 属性无效。
         /// </summary>
-        public bool IsStream { get; set; } = false;
+        public bool IsAutoCloseStream { get; set; } = true;
 
         /// <summary>
         /// <para>设置当请求 HTML 时，是否使用 HTML 头部中的 <see langword="meta"></see> 标签自动获取编码。</para>
@@ -138,11 +138,6 @@ namespace PyLibSharp.Requests
         /// 设置并发连接数（建议1024以下）
         /// </summary>
         public int DefaultConnectionLimit { get; set; } = 512;
-
-        /// <summary>
-        /// 设置读取 HTTP 响应的缓冲区大小（单位字节/byte）。
-        /// </summary>
-        public int ReadBufferSize { get; set; } = 1024;
     }
 
     /// <summary>
@@ -202,11 +197,40 @@ namespace PyLibSharp.Requests
     /// </summary>
     public class ReqResponse : IEnumerable<string>
     {
+        private readonly MemoryStream _rawStream = new MemoryStream();
+
         /// <summary>
-        /// 获取 HTTP 响应转储的原始字节流。
+        /// 获取 HTTP 响应转储的原始输出流。
+        /// <para>每次读取都将转储输出流 <see langword="OutputStream"></see> 中所有内容到本属性中，但并不会关闭输出流（你可以调用CloseStream方法手动关闭，或者之后可能有新的内容时再次读取）</para>
         /// </summary>
-        /// <returns>HTTP 响应转储的原始字节流</returns>
-        public MemoryStream RawStream { get; }
+        /// <returns>HTTP 响应转储的原始输出流</returns>
+        public MemoryStream RawStream
+        {
+            get
+            {
+                if (OutputStream?.CanRead ?? false)
+                {
+                    //读取输出流
+                    MemoryStream bufferStream = new MemoryStream();
+                    OutputStream?.CopyTo(bufferStream);
+                    //追加写入
+                    byte[] buffer = bufferStream.GetBuffer();
+                    _rawStream.Write(buffer, 0, buffer.Length);
+                    bufferStream.Close();
+                }
+
+                return _rawStream;
+            }
+        }
+
+        /// <summary>
+        /// 获取 HTTP 响应的原始字节流。
+        /// <para>小心使用，可能存在不稳定性</para>
+        /// <para>需要 ReqParams 中的 <see langword="IsAutoCloseStream"></see> 属性设为 false。</para>
+        /// <para>特别注意：当使用了 <see langword="Text"></see>、<see langword="Content"></see>、<see langword="RawStream"></see>属性时，他们会自动读取 <see langword="OutputStream"></see></para>
+        /// <returns>HTTP 响应的原始字节流</returns>
+        /// </summary>
+        public Stream OutputStream { get; }
 
         /// <summary>
         /// 获取 HTTP 响应的 Cookie 容器。
@@ -215,10 +239,24 @@ namespace PyLibSharp.Requests
         public CookieContainer Cookies { get; }
 
         /// <summary>
-        /// 获取 HTTP 响应的纯文本（将使用 <see langword="Encode"></see> 参数所代表的编码进行解码）
+        /// 获取 HTTP 响应的纯文本（将使用 <see langword="Encode"></see> 参数所代表的编码（或者当开启根据 HTML 自动判断编码时获取到的编码）进行解码）
         /// </summary>
         /// <returns>HTTP 响应纯文本</returns>
-        public string Text => Encode.GetString(RawStream.ToArray());
+        public string Text
+        {
+            get
+            {
+                string testRead = Encode.GetString(RawStream.ToArray());
+                //是否自动判断编码
+                if (_decodeUsingHtmlMetaTag
+                 && ContentType.ToLower().IndexOf("text/html", StringComparison.OrdinalIgnoreCase) != -1)
+                {
+                    Encode = Utils.GetHtmlEncodingByMetaHeader(testRead);
+                }
+
+                return Encode.GetString(RawStream.ToArray());
+            }
+        }
 
         /// <summary>
         /// 获取 HTTP 响应的原始字节序列。
@@ -233,6 +271,13 @@ namespace PyLibSharp.Requests
         public string ContentType { get; }
 
         /// <summary>
+        /// 获取 HTTP 响应的响应长度（响应流声明的自己的长度，也就是响应流的ContentLength属性，仅供参考）。
+        /// <para>若响应未给该参数，则默认-1</para>
+        /// </summary>
+        /// <returns>HTTP 响应的响应长度（ContentLength属性）</returns>
+        public long ContentLength { get; }
+
+        /// <summary>
         /// <para>获取 HTTP 响应使用的编码；</para>
         /// <para>或设置当解码 <see langword="Text"></see> 参数或执行 Json() 函数时要采用的编码。</para>
         /// </summary>
@@ -243,14 +288,29 @@ namespace PyLibSharp.Requests
         /// </summary>
         public HttpStatusCode StatusCode { get; }
 
-        public ReqResponse(MemoryStream rawStream, CookieContainer cookies, string contentType, Encoding encode,
-                           HttpStatusCode statusCode)
+        private readonly bool       _decodeUsingHtmlMetaTag = false;
+        private readonly WebRequest _requestMain;
+
+        public ReqResponse(WebRequest requestMain, Stream outputStream, CookieContainer cookies, string contentType,
+                           long contentLength,
+                           Encoding encode,
+                           HttpStatusCode statusCode, bool decodeUsingHtmlMetaTag, bool autoCloseStream)
         {
-            Cookies     = cookies;
-            RawStream   = rawStream;
-            ContentType = contentType;
-            Encode      = encode;
-            StatusCode  = statusCode;
+            ContentLength           = contentLength;
+            _requestMain            = requestMain;
+            Cookies                 = cookies;
+            OutputStream            = outputStream;
+            ContentType             = contentType;
+            Encode                  = encode;
+            StatusCode              = statusCode;
+            _decodeUsingHtmlMetaTag = decodeUsingHtmlMetaTag;
+            if (autoCloseStream)
+            {
+                //读取输出流
+                OutputStream?.CopyTo(_rawStream);
+                OutputStream?.Close();
+                _requestMain?.Abort();
+            }
         }
 
         /// <summary>
@@ -272,6 +332,12 @@ namespace PyLibSharp.Requests
             {
                 throw new ReqResponseParseException("JSON 解析出错，请确保响应为 JSON 格式: " + ex.Message, ex);
             }
+        }
+
+        public void CloseStream()
+        {
+            OutputStream?.Close();
+            _requestMain?.Abort();
         }
 
         /// <summary>
@@ -704,6 +770,7 @@ namespace PyLibSharp.Requests
                         break;
                 }
             }
+
             return await RequestBase(URL, new HttpMethod(method.ToUpper()), Params, new CancellationTokenSource());
         }
 
@@ -1012,10 +1079,9 @@ namespace PyLibSharp.Requests
 
             Stream myResponseStream = null;
             //StreamReader myStreamReader   = null;
-            int bufferSize = Params.ReadBufferSize;
 
+            long            responseContentLength   = 0;
             Encoding        responseEncoding        = Encoding.UTF8;
-            MemoryStream    responseStream          = new MemoryStream();
             HttpStatusCode  responseStatusCode      = 0;
             string          responseContentType     = "";
             CookieContainer responseCookieContainer = Params.Cookies;
@@ -1134,11 +1200,15 @@ namespace PyLibSharp.Requests
                     //如果取消
                     if (CancelFlag.IsCancellationRequested)
                     {
-                        return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
+                        return new ReqResponse(request, new MemoryStream(), Params.Cookies, "", 0, new UTF8Encoding(),
+                                               0,
+                                               false, Params.IsAutoCloseStream);
                     }
                     else if (await Task.WhenAny(responseTask, Task.Delay(Params.Timeout)) != responseTask)
                     {
-                        return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
+                        return new ReqResponse(request, new MemoryStream(), Params.Cookies, "", 0, new UTF8Encoding(),
+                                               0,
+                                               false, Params.IsAutoCloseStream);
                     }
 
                     //异步请求结果
@@ -1153,7 +1223,9 @@ namespace PyLibSharp.Requests
                         // HandleError(Params.UseHandler, ReqExceptionHandler, new
                         //                 ReqRequestException("用户主动取消 HTTP 请求", ErrorType.UserCancelled), ErrorType.UserCancelled);
 
-                        return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
+                        return new ReqResponse(request, new MemoryStream(), Params.Cookies, "", 0, new UTF8Encoding(),
+                                               0,
+                                               false, Params.IsAutoCloseStream);
                     }
 
                     response = (HttpWebResponse) responseTask.Result;
@@ -1189,7 +1261,9 @@ namespace PyLibSharp.Requests
                                               ErrorType.HTTPRequestTimeout);
                         }
 
-                        return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
+                        return new ReqResponse(request, new MemoryStream(), Params.Cookies, "", 0, new UTF8Encoding(),
+                                               0,
+                                               false, Params.IsAutoCloseStream);
                     }
                     //其他未知错误
                     else
@@ -1205,12 +1279,13 @@ namespace PyLibSharp.Requests
                 //确保报错后有Response
                 if (response is null)
                 {
-                    return new ReqResponse(new MemoryStream(), Params.Cookies, "", new UTF8Encoding(), 0);
+                    return new ReqResponse(request, new MemoryStream(), Params.Cookies, "", 0, new UTF8Encoding(), 0,
+                                           false, Params.IsAutoCloseStream);
                 }
 
                 //获取响应流
-                myResponseStream = response.GetResponseStream();
-
+                myResponseStream      = response.GetResponseStream();
+                responseContentLength = response.ContentLength;
                 // myStreamReader =
                 //     new StreamReader(myResponseStream ?? throw new ReqResponseException("请求无响应"),
                 //                      Encoding.GetEncoding(response.CharacterSet ??
@@ -1218,16 +1293,16 @@ namespace PyLibSharp.Requests
                 //
 
                 //流转储
-                byte[] buffer = new byte[bufferSize];
-                int count =
-                    await (myResponseStream ?? throw new ReqResponseException("请求无响应", ErrorType.HTTPRequestTimeout))
-                        .ReadAsync(buffer, 0, bufferSize);
-
-                while (count > 0)
-                {
-                    responseStream.Write(buffer, 0, count);
-                    count = await myResponseStream.ReadAsync(buffer, 0, bufferSize);
-                }
+                // byte[] buffer = new byte[bufferSize];
+                // int count =
+                //     await (myResponseStream ?? throw new ReqResponseException("请求无响应", ErrorType.HTTPRequestTimeout))
+                //         .ReadAsync(buffer, 0, bufferSize);
+                //
+                // while (count > 0)
+                // {
+                //     responseStream.Write(buffer, 0, count);
+                //     count = await myResponseStream.ReadAsync(buffer, 0, bufferSize);
+                // }
 
                 //编码自动判断
                 if (response.ContentEncoding != "" && !(response.ContentEncoding is null))
@@ -1244,21 +1319,6 @@ namespace PyLibSharp.Requests
                 else
                 {
                     responseEncoding = Encoding.UTF8;
-                }
-
-                //通过HTML头部的Meta tag判断编码
-                if (Params.IsUseHtmlMetaEncoding &&
-                    response.ContentType.ToLower().IndexOf("text/html", StringComparison.Ordinal) != -1)
-                {
-                    var CharSetMatch =
-                        Regex.Match(responseEncoding.GetString(responseStream.ToArray()),
-                                    @"<meta.*?charset=""?([a-z0-9-]+)\b", RegexOptions.IgnoreCase)
-                             .Groups;
-                    if (CharSetMatch.Count > 1 && CharSetMatch[1].Value != "")
-                    {
-                        string overrideCharset = CharSetMatch[1].Value;
-                        responseEncoding = Encoding.GetEncoding(overrideCharset);
-                    }
                 }
 
                 //属性添加
@@ -1279,10 +1339,10 @@ namespace PyLibSharp.Requests
             //     //myStreamReader?.Close();
             //     myResponseStream?.Close();
             // }
-            request?.Abort();
-            myResponseStream?.Close();
-            return new ReqResponse(responseStream, responseCookieContainer, responseContentType, responseEncoding,
-                                   responseStatusCode);
+            return new ReqResponse(request, myResponseStream, responseCookieContainer, responseContentType,
+                                   responseContentLength,
+                                   responseEncoding,
+                                   responseStatusCode, Params.IsUseHtmlMetaEncoding, Params.IsAutoCloseStream);
         }
     }
 }

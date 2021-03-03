@@ -1,7 +1,6 @@
-﻿using PyLibSharp.Common;
-using PyLibSharp.Requests;
+﻿using PyLibSharp.Requests;
 using System;
-using System.Collections.Generic;
+using System.Text;
 
 namespace TestCore
 {
@@ -9,17 +8,18 @@ namespace TestCore
     {
         static void Main(string[] args)
         {
-            ConsoleEx.Print(new Dictionary<string,string>()
+            var str = Requests.Get("https://www.baidu.com", new ReqParams()
             {
-                { "11","22"},
-                { "12","22"}
+                Timeout = 10000,
+                IsThrowErrorForStatusCode = false,
+                IsAutoCloseStream = false
             });
-            Console.ReadKey();
-            // var str = Requests.Get("https://api.yukari.one/setu/", new ReqParams()
-            // {
-            //     Timeout = 2500,
-            //     IsThrowErrorForStatusCode = false,
-            // });
+            byte[] buffer = new byte[50];
+            str.OutputStream.Read(buffer, 0,50);
+            Console.WriteLine(Encoding.UTF8.GetString(buffer));
+
+            str.OutputStream.Read(buffer, 0, 50);
+            Console.WriteLine(Encoding.UTF8.GetString(buffer));
             //
             // Console.WriteLine("结束");
             // Console.WriteLine(str.StatusCode);
@@ -29,7 +29,7 @@ namespace TestCore
             //     Console.Write(s);
             // }
             //
-            // Console.ReadKey();
+            Console.ReadKey();
         }
 
         private static void Requests_ReqExceptionHandler(object sender, Requests.AggregateExceptionArgs e)

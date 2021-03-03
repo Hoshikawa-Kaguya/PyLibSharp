@@ -1,0 +1,336 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>PyLibSharp.Requests</name>
+    </assembly>
+    <members>
+        <member name="T:PyLibSharp.Requests.ReqParams">
+            <summary>
+            设置 HTTP 请求的基本参数。
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.Header">
+            <summary>
+            <para>设置 HTTP 请求中的默认头部。</para>
+            <para>若此参数并不包含你想要设置的头部，请改用 <see langword="CustomHeader"></see> 参数去设置。</para>
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.ProxyToUse">
+            <summary>
+            设置传输过程中使用的代理。
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.Cookies">
+            <summary>
+            设置传输时采用的 Cookie 容器。
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.CustomHeader">
+            <summary>
+            当要设置 <see langword="Header"></see> 中的参数所不包含的默认头部或任何自定义头部时，请使用本参数设置。
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.Params">
+            <summary>
+            <para>设置要传递给服务器的请求参数。</para>
+            <para>当 HTTP 动作为 <see langword="GET"></see> 时，将智能附加至 URL 。</para>
+            <para>其他 HTTP 动作时，将写入传输流，此时请设置 <see langword="PostParamsType"></see> 以明确如何传输数据。</para>
+            <para>其他 HTTP 动作时，此参数优先级不如 <see langword="PostContent"></see> 高，若设置了 <see langword="PostContent"></see> 参数，此参数将被忽略。</para>
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.PostContent">
+            <summary>
+            <para>（GET 动作中此参数将被忽略）</para>
+            <para>设置要 Post 至服务器的 HTTP 内容（如有必要需手动设置 <see langword="HttpContent"></see> 的 MediaType 字符串，如嫌麻烦请继续使用 <see langword="PostRawData"></see>、<see langword="PostJson"></see>、<see langword="PostMultiPart"></see> 参数，这些参数会自动设置 ContentType ）。</para>
+            <para>若同时设置了 <see langword="PostRawData"></see>、<see langword="PostJson"></see>、<see langword="PostMultiPart"></see>，此参数优先级最高，将使用本参数指定的方式进行 Post ；</para>
+            <para>在未设置 <see langword="PostParamsType"></see> 参数时，将自动修改 <see langword="PostParamsType"></see> 的值。</para>
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.PostRawData">
+            <summary>
+            <para>（GET 动作中此参数将被忽略）</para>
+            <para>建议改用 <see langword="PostContent"></see> 参数传递 HttpContent；</para>
+            <para>设置要 Post 至服务器的原始字节序列。</para>
+            <para>若同时设置了 <see langword="PostContent"></see>、<see langword="PostRawData"></see>、<see langword="PostJson"></see>、<see langword="PostMultiPart"></see>，<see langword="PostContent"></see> 参数优先级最高，将使用 <see langword="PostContent"></see> 指定的方式进行 Post ；</para>
+            <para>在未设置 <see langword="PostParamsType"></see> 参数时，将自动修改 <see langword="PostParamsType"></see> 的值。</para>
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.PostJson">
+            <summary>
+            <para>（GET 动作中此参数将被忽略）</para>
+            <para>建议改用 <see langword="PostContent"></see> 参数传递 HttpContent；</para>
+            <para>设置要 Post 至服务器的 Json 数据。</para>
+            <para>若同时设置了 <see langword="PostContent"></see>、<see langword="PostRawData"></see>、<see langword="PostJson"></see>、<see langword="PostMultiPart"></see>，<see langword="PostContent"></see> 参数优先级最高，将使用 <see langword="PostContent"></see> 指定的方式进行 Post ；</para>
+            <para>在未设置 <see langword="PostParamsType"></see> 参数时，将自动修改 <see langword="PostParamsType"></see> 的值。</para>
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.PostMultiPart">
+            <summary>
+            <para>（GET 动作中此参数将被忽略）</para>
+            <para>建议改用 <see langword="PostContent"></see> 参数传递 HttpContent；</para>
+            <para>设置要 Post 到服务器的 MultiPart 数据。</para>
+            <para>若同时设置了 <see langword="PostContent"></see>、<see langword="PostRawData"></see>、<see langword="PostJson"></see>、<see langword="PostMultiPart"></see>，<see langword="PostContent"></see> 参数优先级最高，将使用 <see langword="PostContent"></see> 指定的方式进行 Post ；</para>
+            <para>在未设置 <see langword="PostParamsType"></see> 参数时，将自动修改 <see langword="PostParamsType"></see> 的值。</para>
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.PostEncoding">
+            <summary>
+            <para>（GET 动作中此参数将被忽略）</para>
+            <para>若 Post 传输的是字符串，该参数用来决定将采用的编码（对 <see langword="PostContent"></see> 参数中设置的编码无影响）。</para>
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.PostParamsType">
+            <summary>
+            <para>（GET 动作中此参数将被忽略）</para>
+            <para>设置 Post 采用的传输方式。</para>
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.UseHandler">
+            <summary>
+            <para>设置是否采用自定义错误捕捉器。</para>
+            <para>若设置为true，请务必同时设置 <see cref="T:PyLibSharp.Requests.Requests" /> 类的 <see langword="ReqExceptionHandler"></see> 参数。</para>
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.IsStream">
+            <summary>
+            设置是否在结果中转储原始字节流。
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.IsUseHtmlMetaEncoding">
+            <summary>
+            <para>设置当请求 HTML 时，是否使用 HTML 头部中的 <see langword="meta"></see> 标签自动获取编码。</para>
+            <para>如设为 <see langword="true"></see>，将覆盖 HTTP 响应头中的编码设置。</para>
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.IsThrowErrorForStatusCode">
+            <summary>
+            设置当 HTTP 响应码不正常时，是否抛出异常。
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.IsThrowErrorForTimeout">
+            <summary>
+            设置当 HTTP 响应超时时，是否抛出异常。
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.isCheckSSLCert">
+            <summary>
+            是否检查 HTTPS 证书的合法性，默认检查，以避免中间人等不安全因素
+            <para>如非必要请不要设为false</para>
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.Timeout">
+            <summary>
+            设置 HTTP 连接等待的超时时间（单位毫秒/ms）。
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.DefaultConnectionLimit">
+            <summary>
+            设置并发连接数（建议1024以下）
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.ReadBufferSize">
+            <summary>
+            设置读取 HTTP 响应的缓冲区大小（单位字节/byte）。
+            </summary>
+        </member>
+        <member name="T:PyLibSharp.Requests.PostType">
+            <summary>
+            设置当 Post 时数据的传输方式。
+            </summary>
+        </member>
+        <member name="F:PyLibSharp.Requests.PostType.http_content">
+            <summary>
+            采用 HttpContent 封装 Post 有效载荷。
+            </summary>
+        </member>
+        <member name="F:PyLibSharp.Requests.PostType.json">
+            <summary>
+            要传输的是 Json 数据（将自动设置 ContentType ）
+            </summary>
+        </member>
+        <member name="F:PyLibSharp.Requests.PostType.x_www_form_urlencoded">
+            <summary>
+            要传输的是 WWW 表单数据（将自动进行 URL 编码以及设置 ContentType ）
+            </summary>
+        </member>
+        <member name="F:PyLibSharp.Requests.PostType.form_data">
+            <summary>
+            要传输的是 Multipart FormData 数据（将自动设置 ContentType ）
+            </summary>
+        </member>
+        <member name="F:PyLibSharp.Requests.PostType.raw">
+            <summary>
+            要传输的是原始字节序列数据（建议手动设置 ContentType ）
+            </summary>
+        </member>
+        <member name="F:PyLibSharp.Requests.PostType.none">
+            <summary>
+            默认（不 Post 数据）
+            </summary>
+        </member>
+        <member name="T:PyLibSharp.Requests.ReqRepeatable">
+            <summary>
+            若要让字典支持重复的键，请实例化本类并传入到字典的构造函数中。
+            </summary>
+        </member>
+        <member name="T:PyLibSharp.Requests.ReqResponse">
+            <summary>
+            储存 HTTP 响应的基本信息。
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqResponse.RawStream">
+            <summary>
+            获取 HTTP 响应转储的原始字节流。
+            </summary>
+            <returns>HTTP 响应转储的原始字节流</returns>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqResponse.OutputStream">
+            <summary>
+            获取 HTTP 响应的原始字节流（读取不可逆）。
+            <para>特别注意：当使用了Text、Content、RawStream属性后，会自动读取OutputStream，此属性随即无效</para>
+            <returns>HTTP 响应的原始字节流</returns>
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqResponse.Cookies">
+            <summary>
+            获取 HTTP 响应的 Cookie 容器。
+            </summary>
+            <returns>HTTP 响应的 Cookie 容器</returns>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqResponse.Text">
+            <summary>
+            获取 HTTP 响应的纯文本（将使用 <see langword="Encode"></see> 参数所代表的编码进行解码）
+            </summary>
+            <returns>HTTP 响应纯文本</returns>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqResponse.Content">
+            <summary>
+            获取 HTTP 响应的原始字节序列。
+            </summary>
+            <returns>HTTP 响应的原始字节序列</returns>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqResponse.ContentType">
+            <summary>
+            获取 HTTP 响应的 ContentType。
+            </summary>
+            <returns>HTTP 响应的ContentType</returns>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqResponse.Encode">
+            <summary>
+            <para>获取 HTTP 响应使用的编码；</para>
+            <para>或设置当解码 <see langword="Text"></see> 参数或执行 Json() 函数时要采用的编码。</para>
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqResponse.StatusCode">
+            <summary>
+            获取 HTTP 响应码。
+            </summary>
+        </member>
+        <member name="M:PyLibSharp.Requests.ReqResponse.Json">
+            <summary>
+            将结果中的 Text（将使用 <see langword="Encode"></see> 参数所代表的编码进行解码）解析为 <see langword="Json"></see> 的 JObject。
+            </summary>
+            <returns>解析后的 JObject 对象</returns>
+        </member>
+        <member name="M:PyLibSharp.Requests.ReqResponse.ToObject``1">
+            <summary>
+            将结果中的 Text（将使用 <see langword="Encode"></see> 参数所代表的编码进行解码）解析为指定类型的对象。
+            </summary>
+            <returns>解析后的对象</returns>
+        </member>
+        <member name="M:PyLibSharp.Requests.ReqResponse.ToString">
+            <summary>
+            获取 HTTP 响应的纯文本（将使用 <see langword="Encode"></see> 参数所代表的编码进行解码）
+            </summary>
+            <returns>HTTP 响应纯文本</returns>
+        </member>
+        <member name="M:PyLibSharp.Requests.ReqResponse.GetEnumerator">
+            <summary>
+            获取返回值文本每一行的迭代器
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:PyLibSharp.Requests.ReqResponse.System#Collections#IEnumerable#GetEnumerator">
+            <summary>
+            获取返回值文本每一行的迭代器
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:PyLibSharp.Requests.ErrorType">
+            <summary>
+            HTTP 中 URL解析、请求或响应中可能出现的错误类型。
+            </summary>
+        </member>
+        <member name="M:PyLibSharp.Requests.Utils.GetHtmlEncodingByMetaHeader(System.String)">
+            <summary>
+            根据HTML头部中的meta标记来返回网页编码
+            </summary>
+            <param name="htmlContent"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PyLibSharp.Requests.Utils.GetInnerExceptionList(System.Exception)">
+            <summary>
+            链式获取父错误的每一级 InnerException，并作为 List 返回
+            </summary>
+            <param name="exOuter">父级错误</param>
+            <returns></returns>
+        </member>
+        <member name="M:PyLibSharp.Requests.Utils.GetInnerExceptionMessages(System.Exception)">
+            <summary>
+            链式获取父错误的每一级 InnerException 的错误消息，并拼接为字符串返回
+            <para>每一行代表一级的错误消息，从上到下依次深入</para>
+            </summary>
+            <param name="exOuter">父级错误</param>
+            <returns></returns>
+        </member>
+        <member name="M:PyLibSharp.Requests.Utils.HandleError(System.Boolean,System.EventHandler{PyLibSharp.Requests.Requests.AggregateExceptionArgs},System.Exception,PyLibSharp.Requests.ErrorType)">
+            <summary>
+            通用错误处理函数
+            </summary>
+            <param name="useHandler">是否使用捕捉器</param>
+            <param name="handler">捕捉器</param>
+            <param name="innerException">内部错误</param>
+            <param name="errType">错误类型</param>
+        </member>
+        <member name="T:PyLibSharp.Requests.WebRequestExtensions">
+            <summary>
+            Provides extension methods for asynchronous operations on
+            <see cref="T:System.Net.WebRequest"/> objects.
+            </summary>
+            <threadsafety static="true" instance="false"/>
+            <preliminary/>
+        </member>
+        <member name="M:PyLibSharp.Requests.WebRequestExtensions.GetResponseAsync(System.Net.WebRequest)">
+            <summary>
+            Returns a response to an Internet request as an asynchronous operation.
+            </summary>
+            <remarks>
+            This operation will not block. The returned <see cref="T:System.Threading.Tasks.Task`1"/> object will
+            complete after a response to an Internet request is available.
+            </remarks>
+            <param name="request">The request.</param>
+            <returns>A <see cref="T:System.Threading.Tasks.Task"/> object which represents the asynchronous operation.</returns>
+            <exception cref="T:System.ArgumentNullException">If <paramref name="request"/> is <see langword="null"/>.</exception>
+        </member>
+        <member name="M:PyLibSharp.Requests.WebRequestExtensions.GetResponseAsync(System.Net.WebRequest,System.Threading.CancellationToken)">
+            <summary>
+            Returns a response to an Internet request as an asynchronous operation.
+            </summary>
+            <remarks>
+            This operation will not block. The returned <see cref="T:System.Threading.Tasks.Task`1"/> object will
+            complete after a response to an Internet request is available.
+            </remarks>
+            <param name="request">The request.</param>
+            <param name="cancellationToken">The <see cref="T:System.Threading.CancellationToken"/> that will be assigned to the new <see cref="T:System.Threading.Tasks.Task"/>.</param>
+            <returns>A <see cref="T:System.Threading.Tasks.Task"/> object which represents the asynchronous operation.</returns>
+            <exception cref="T:System.ArgumentNullException">If <paramref name="request"/> is <see langword="null"/>.</exception>
+            <exception cref="T:System.Net.WebException">
+            If <see cref="M:System.Net.WebRequest.Abort"/> was previously called.
+            <para>-or-</para>
+            <para>If the timeout period for the request expired.</para>
+            <para>-or-</para>
+            <para>If an error occurred while processing the request.</para>
+            </exception>
+        </member>
+    </members>
+</doc>

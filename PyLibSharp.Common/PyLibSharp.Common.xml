@@ -1,0 +1,145 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>PyLibSharp.Common</name>
+    </assembly>
+    <members>
+        <member name="T:PyLibSharp.Common.OrderBy">
+            <summary>
+            排序方式
+            </summary>
+        </member>
+        <member name="F:PyLibSharp.Common.OrderBy.Asc">
+            <summary>
+            升序
+            </summary>
+        </member>
+        <member name="F:PyLibSharp.Common.OrderBy.Desc">
+            <summary>
+            降序
+            </summary>
+        </member>
+        <member name="T:PyLibSharp.Common.Range">
+            <summary>
+            可排序，不可重复的整数范围
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Common.Range.data">
+            <summary>
+            范围内的数据
+            </summary>
+        </member>
+        <member name="F:PyLibSharp.Common.Range.orderBy">
+            <summary>
+            默认排序方式
+            </summary>
+        </member>
+        <member name="M:PyLibSharp.Common.Range.range(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            创建一个范围
+            </summary>
+            <param name="start">开始的数字</param>
+            <param name="stop">终止的数字</param>
+            <param name="step">步长</param>
+            <returns></returns>
+        </member>
+        <member name="M:PyLibSharp.Common.Range.#ctor(System.Collections.Generic.IEnumerable{System.Int32})">
+            <summary>
+            用一个可迭代序列来初始化一个范围
+            </summary>
+            <param name="data"></param>
+        </member>
+        <member name="M:PyLibSharp.Common.Range.#ctor(System.Collections.Generic.List{System.Int32})">
+            <summary>
+            用一个整数列表来初始化一个范围
+            </summary>
+            <param name="data"></param>
+        </member>
+        <member name="M:PyLibSharp.Common.Range.op_Multiply(PyLibSharp.Common.Range,System.Int32)">
+            <summary>
+            针对范围中每一个数都乘一个数
+            </summary>
+            <param name="a"></param>
+            <param name="b"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PyLibSharp.Common.Range.op_Division(PyLibSharp.Common.Range,System.Int32)">
+            <summary>
+            针对范围中每一个数都除一个数（若有小数将直接抹掉）
+            </summary>
+            <param name="a"></param>
+            <param name="b"></param>
+            <returns></returns>
+        </member>
+        <member name="P:PyLibSharp.Common.Range.Item(System.Int32)">
+            <summary>
+            获取指定下标位置的数据
+            </summary>
+            <param name="index">下标号（从0开始）</param>
+            <returns></returns>
+        </member>
+        <member name="P:PyLibSharp.Common.Range.Item(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            获取范围中，从startIndex下标到endIndex下标的数据，默认步长为1，但可调
+            </summary>
+            <param name="startIndex">开始的下标（从0开始）</param>
+            <param name="endIndex">结束的下标（从0开始）</param>
+            <param name="step">步长</param>
+            <returns></returns>
+        </member>
+        <member name="M:PyLibSharp.Common.Range.#ctor(System.Int32,System.Boolean,PyLibSharp.Common.OrderBy)">
+            <summary>
+            构造函数
+            </summary>
+            <param name="count">从0或1开始生成多少个数字</param>
+            <param name="startAtZero">
+            是否从0开始。
+            <para>例如，假设count=7，且此参数为true：</para>
+            <para>  范围是：0~6</para>
+            <para>否则：</para>
+            <para>  范围是：1~7</para>
+            </param>
+            <param name="orderBy">排序方式</param>
+        </member>
+        <member name="M:PyLibSharp.Common.Range.#ctor(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            构造函数
+            构造一个[start,stop]范围的
+            <see>
+                <cref>List{int}</cref>
+            </see>
+            </summary>
+            <param name="start">范围开始的数字（包含这个数字）</param>
+            <param name="stop">范围终止的数（包含这个数字）</param>
+            <param name="step">范围增加步长（可为负数）</param>
+        </member>
+        <member name="M:PyLibSharp.Common.Range.IsIn(System.Int32)">
+            <summary>
+            范围是否包含某一个数字
+            </summary>
+            <param name="i"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PyLibSharp.Common.Range.IsIn(PyLibSharp.Common.Range)">
+            <summary>
+            某一个范围是否在该范围之内（交集是否为本身）
+            </summary>
+            <param name="i"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PyLibSharp.Common.Range.IsOut(System.Int32)">
+            <summary>
+            范围是否包含不某一个数字
+            </summary>
+            <param name="i"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PyLibSharp.Common.Range.IsOut(PyLibSharp.Common.Range)">
+            <summary>
+            范围是否不包含某一个范围（交集是否为空）
+            </summary>
+            <param name="i"></param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

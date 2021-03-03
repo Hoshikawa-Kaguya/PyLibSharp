@@ -5,11 +5,33 @@ using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace PyLibSharp.Requests
 {
     public static class Utils
     {
+        /// <summary>
+        /// 根据HTML头部中的meta标记来返回网页编码
+        /// </summary>
+        /// <param name="htmlContent"></param>
+        /// <returns></returns>
+        public static Encoding GetHtmlEncodingByMetaHeader(string htmlContent)
+        {
+            Encoding responseEncoding = Encoding.UTF8;
+            //通过HTML头部的Meta tag判断编码
+            var CharSetMatch =
+                Regex.Match(htmlContent, @"<meta.*?charset=""?([a-z0-9-]+)\b", RegexOptions.IgnoreCase)
+                     .Groups;
+            if (CharSetMatch.Count > 1 && CharSetMatch[1].Value != "")
+            {
+                string overrideCharset = CharSetMatch[1].Value;
+                responseEncoding = Encoding.GetEncoding(overrideCharset);
+            }
+
+            return responseEncoding;
+        }
+
         /// <summary>
         /// 链式获取父错误的每一级 InnerException，并作为 List 返回
         /// </summary>
