@@ -12,6 +12,7 @@
   <ItemGroup>
     <ProjectReference Include="..\PyLibSharp.Common\PyLibSharp.Common.csproj" />
     <ProjectReference Include="..\PyLibSharp.Requests\PyLibSharp.Requests.csproj" />
+    <ProjectReference Include="..\PyLibSharp.Win32Friendly\PyLibSharp.Win32Friendly.csproj" />
   </ItemGroup>
 
 </Project>

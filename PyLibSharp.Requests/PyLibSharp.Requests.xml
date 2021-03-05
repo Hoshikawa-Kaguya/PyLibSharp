@@ -91,9 +91,9 @@
             <para>若设置为true，请务必同时设置 <see cref="T:PyLibSharp.Requests.Requests" /> 类的 <see langword="ReqExceptionHandler"></see> 参数。</para>
             </summary>
         </member>
-        <member name="P:PyLibSharp.Requests.ReqParams.IsStream">
+        <member name="P:PyLibSharp.Requests.ReqParams.IsAutoCloseStream">
             <summary>
-            设置是否在结果中转储原始字节流。
+            是否自动关闭输出流，如果设置为true，则 <see langword="OutputStream"></see> 属性无效。
             </summary>
         </member>
         <member name="P:PyLibSharp.Requests.ReqParams.IsUseHtmlMetaEncoding">
@@ -126,11 +126,6 @@
         <member name="P:PyLibSharp.Requests.ReqParams.DefaultConnectionLimit">
             <summary>
             设置并发连接数（建议1024以下）
-            </summary>
-        </member>
-        <member name="P:PyLibSharp.Requests.ReqParams.ReadBufferSize">
-            <summary>
-            设置读取 HTTP 响应的缓冲区大小（单位字节/byte）。
             </summary>
         </member>
         <member name="T:PyLibSharp.Requests.PostType">
@@ -180,14 +175,17 @@
         </member>
         <member name="P:PyLibSharp.Requests.ReqResponse.RawStream">
             <summary>
-            获取 HTTP 响应转储的原始字节流。
+            获取 HTTP 响应转储的原始输出流。
+            <para>每次读取都将转储输出流 <see langword="OutputStream"></see> 中所有内容到本属性中，但并不会关闭输出流（你可以调用CloseStream方法手动关闭，或者之后可能有新的内容时再次读取）</para>
             </summary>
-            <returns>HTTP 响应转储的原始字节流</returns>
+            <returns>HTTP 响应转储的原始输出流</returns>
         </member>
         <member name="P:PyLibSharp.Requests.ReqResponse.OutputStream">
             <summary>
-            获取 HTTP 响应的原始字节流（读取不可逆）。
-            <para>特别注意：当使用了Text、Content、RawStream属性后，会自动读取OutputStream，此属性随即无效</para>
+            获取 HTTP 响应的原始字节流。
+            <para>小心使用，可能存在不稳定性</para>
+            <para>需要 ReqParams 中的 <see langword="IsAutoCloseStream"></see> 属性设为 false。</para>
+            <para>特别注意：当使用了 <see langword="Text"></see>、<see langword="Content"></see>、<see langword="RawStream"></see>属性时，他们会自动读取 <see langword="OutputStream"></see></para>
             <returns>HTTP 响应的原始字节流</returns>
             </summary>
         </member>
@@ -199,7 +197,7 @@
         </member>
         <member name="P:PyLibSharp.Requests.ReqResponse.Text">
             <summary>
-            获取 HTTP 响应的纯文本（将使用 <see langword="Encode"></see> 参数所代表的编码进行解码）
+            获取 HTTP 响应的纯文本（将使用 <see langword="Encode"></see> 参数所代表的编码（或者当开启根据 HTML 自动判断编码时获取到的编码）进行解码）
             </summary>
             <returns>HTTP 响应纯文本</returns>
         </member>
@@ -214,6 +212,13 @@
             获取 HTTP 响应的 ContentType。
             </summary>
             <returns>HTTP 响应的ContentType</returns>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqResponse.ContentLength">
+            <summary>
+            获取 HTTP 响应的响应长度（响应流声明的自己的长度，也就是响应流的ContentLength属性，仅供参考）。
+            <para>若响应未给该参数，则默认-1</para>
+            </summary>
+            <returns>HTTP 响应的响应长度（ContentLength属性）</returns>
         </member>
         <member name="P:PyLibSharp.Requests.ReqResponse.Encode">
             <summary>
