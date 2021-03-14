@@ -909,8 +909,8 @@ namespace PyLibSharp.Requests
 
 
                 if (Method == HttpMethod.Get ||
-                    (Params.PostParamsType == PostType.form_data    && Params.Params.Count > 0)
-                 || (Params.PostParamsType == PostType.http_content && Params.Params.Count > 0))
+                    //只有x_www_form情况下Params才是Post的参数，其他情况下均要转为Get参数
+                    (Params.PostParamsType != PostType.x_www_form_urlencoded && Params.Params.Count > 0))
                 {
                     //如果是 GET 请求，需要拼接参数到 URL 上
                     var urlParsed = Url.Contains("?") ? Url.Split('?')[0] : Url;

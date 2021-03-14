@@ -8,14 +8,14 @@ Requests库部分
 
 Use. Net to encapsulate some common functions according to the design idea of some Python libraries</Description>
     <Authors>xiaohe321</Authors>
-    <Version>1.2.7</Version>
+    <Version>1.2.8</Version>
     <Company />
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/xh321/PyLibSharp</PackageProjectUrl>
     <RepositoryUrl></RepositoryUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <NeutralLanguage>zh-CN</NeutralLanguage>
-    <PackageReleaseNotes>[Requests]增加输出流OutputStream</PackageReleaseNotes>
+    <PackageReleaseNotes>[Requests]修正Post类型为form_data或http_content时的Params参数被忽略的问题，现在会自动转为Get参数</PackageReleaseNotes>
     <PackageTags>request network</PackageTags>
     <AssemblyVersion>1.2.7.0</AssemblyVersion>
   </PropertyGroup>
