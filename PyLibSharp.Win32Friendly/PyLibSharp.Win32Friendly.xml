@@ -4,5 +4,57 @@
         <name>PyLibSharp.Win32Friendly</name>
     </assembly>
     <members>
+        <member name="P:PyLibSharp.Win32Friendly.WindowApi.Win32Window.WindowText">
+            <summary>
+            该窗体的标题文本
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Win32Friendly.WindowApi.Win32Window.ClassName">
+            <summary>
+            该窗体的类名字符串
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Win32Friendly.WindowApi.Win32Window.WindowPosition">
+            <summary>
+            该窗体的坐标和大小
+            <para>坐标取的是窗体左上角的坐标</para>
+            </summary>
+        </member>
+        <member name="M:PyLibSharp.Win32Friendly.WindowApi.GetSubWindowByProps(PyLibSharp.Win32Friendly.WindowApi.Win32Window,System.String,System.String)">
+            <summary>
+            根据指定窗体属性来获取第一个符合条件的子窗体对象
+            </summary>
+            <param name="wParent"></param>
+            <param name="sWindowText"></param>
+            <param name="sClassName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PyLibSharp.Win32Friendly.WindowApi.GetWindowByProps(System.IntPtr,System.String,System.String)">
+            <summary>
+            根据指定窗体属性来获取第一个符合条件的窗体对象
+            </summary>
+            <param name="hParent"></param>
+            <param name="sWindowText"></param>
+            <param name="sClassName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PyLibSharp.Win32Friendly.WindowApi.GetSubWindowsByProps(PyLibSharp.Win32Friendly.WindowApi.Win32Window,System.String,System.String)">
+            <summary>
+            根据指定窗体属性来遍历符合条件的子窗体对象
+            </summary>
+            <param name="wParent"></param>
+            <param name="sWindowText"></param>
+            <param name="sClassName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PyLibSharp.Win32Friendly.WindowApi.GetWindowsByProps(System.IntPtr,System.String,System.String)">
+            <summary>
+            根据指定窗体属性来遍历符合条件的窗体对象
+            </summary>
+            <param name="hParent"></param>
+            <param name="sWindowText"></param>
+            <param name="sClassName"></param>
+            <returns></returns>
+        </member>
     </members>
 </doc>

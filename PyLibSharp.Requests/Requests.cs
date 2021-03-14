@@ -908,7 +908,9 @@ namespace PyLibSharp.Requests
                 Uri urlToSend = new Uri(Url);
 
 
-                if (Method == HttpMethod.Get)
+                if (Method == HttpMethod.Get ||
+                    (Params.PostParamsType == PostType.form_data    && Params.Params.Count > 0)
+                 || (Params.PostParamsType == PostType.http_content && Params.Params.Count > 0))
                 {
                     //如果是 GET 请求，需要拼接参数到 URL 上
                     var urlParsed = Url.Contains("?") ? Url.Split('?')[0] : Url;
