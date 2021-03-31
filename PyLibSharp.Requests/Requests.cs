@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -138,6 +139,16 @@ namespace PyLibSharp.Requests
         /// 设置并发连接数（建议1024以下）
         /// </summary>
         public int DefaultConnectionLimit { get; set; } = 512;
+
+        /// <summary>
+        /// 是否自动对返回流进行Gzip解压（若服务器表明其为Gzip压缩后传输的）
+        /// </summary>
+        public bool IsAutoUnGzip { get; set; } = true;
+
+        /// <summary>
+        /// 是否自动对返回流进行Deflate解压（若服务器表明其为Deflate压缩后传输的）
+        /// </summary>
+        public bool IsAutoUnDeflate { get; set; } = true;
     }
 
     /// <summary>
@@ -212,7 +223,25 @@ namespace PyLibSharp.Requests
                 {
                     //读取输出流
                     MemoryStream bufferStream = new MemoryStream();
-                    OutputStream?.CopyTo(bufferStream);
+
+                    IsCurrentGzipped  = IsGzipped;
+                    IsCurrentDeflated = IsDeflated;
+
+                    if (_isAutoUnGzip && IsGzipped)
+                    {
+                        Utils.UnGzipFromStreamToStream(OutputStream, bufferStream);
+                        IsCurrentGzipped = false;
+                    }
+                    else if (_isAutoUnDeflate && IsDeflated)
+                    {
+                        Utils.UnDeflateFromStreamToStream(OutputStream, bufferStream);
+                        IsCurrentDeflated = false;
+                    }
+                    else
+                    {
+                        OutputStream?.CopyTo(_rawStream);
+                    }
+
                     //追加写入
                     byte[] buffer = bufferStream.GetBuffer();
                     _rawStream.Write(buffer, 0, buffer.Length);
@@ -288,13 +317,47 @@ namespace PyLibSharp.Requests
         /// </summary>
         public HttpStatusCode StatusCode { get; }
 
+        /// <summary>
+        /// 服务器响应流是否被Gzip压缩过
+        /// </summary>
+        public bool IsGzipped { get; }
+
+        /// <summary>
+        /// 服务器响应流是否被Deflate压缩过
+        /// </summary>
+        public bool IsDeflated { get; }
+
+        /// <summary>
+        /// RawStream 当前是否被Gzip压缩过
+        /// </summary>
+        public bool IsCurrentGzipped { get; private set; }
+
+        /// <summary>
+        /// RawStream 当前是否被Deflate压缩过
+        /// </summary>
+        public bool IsCurrentDeflated { get; private set; }
+
+        /// <summary>
+        /// 是否自动对返回流进行Gzip解压（若服务器表明其为Gzip压缩后传输的）
+        /// <para>注意，仅对之后读取的RawStream有效，若已经读取过RawStream，则无效</para>
+        /// </summary>
+        private bool _isAutoUnGzip { get; set; } = true;
+
+        /// <summary>
+        /// 是否自动对返回流进行Deflate解压（若服务器表明其为Deflate压缩后传输的）
+        /// <para>注意，仅对之后读取的RawStream有效，若已经读取过RawStream，则无效</para>
+        /// </summary>
+        private bool _isAutoUnDeflate { get; set; } = true;
+
         private readonly bool       _decodeUsingHtmlMetaTag = false;
         private readonly WebRequest _requestMain;
 
-        public ReqResponse(WebRequest requestMain, Stream outputStream, CookieContainer cookies, string contentType,
-                           long contentLength,
-                           Encoding encode,
-                           HttpStatusCode statusCode, bool decodeUsingHtmlMetaTag, bool autoCloseStream)
+        public ReqResponse(WebRequest     requestMain, Stream outputStream, CookieContainer cookies, string contentType,
+                           long           contentLength,
+                           Encoding       encode,
+                           HttpStatusCode statusCode,              bool decodeUsingHtmlMetaTag, bool autoCloseStream,
+                           bool           isGzipped       = false, bool isDeflated = false, bool isAutoUnGzip = true,
+                           bool           isAutoUnDeflate = true)
         {
             ContentLength           = contentLength;
             _requestMain            = requestMain;
@@ -304,10 +367,30 @@ namespace PyLibSharp.Requests
             Encode                  = encode;
             StatusCode              = statusCode;
             _decodeUsingHtmlMetaTag = decodeUsingHtmlMetaTag;
+            IsGzipped               = isGzipped;
+            IsDeflated              = isDeflated;
+            IsCurrentGzipped        = isGzipped;
+            IsCurrentDeflated       = isDeflated;
+            _isAutoUnGzip           = isAutoUnGzip;
+            _isAutoUnDeflate        = isAutoUnDeflate;
             if (autoCloseStream)
             {
                 //读取输出流
-                OutputStream?.CopyTo(_rawStream);
+                if (_isAutoUnGzip && isGzipped)
+                {
+                    Utils.UnGzipFromStreamToStream(OutputStream, _rawStream);
+                    IsCurrentGzipped = false;
+                }
+                else if (_isAutoUnDeflate && isDeflated)
+                {
+                    Utils.UnDeflateFromStreamToStream(OutputStream, _rawStream);
+                    IsCurrentDeflated = false;
+                }
+                else
+                {
+                    OutputStream?.CopyTo(_rawStream);
+                }
+
                 OutputStream?.Close();
                 _requestMain?.Abort();
             }
@@ -709,21 +792,21 @@ namespace PyLibSharp.Requests
                     {
                         if (defaultHeaderAndKey[HttpRequestHeader.ContentType].ToLower()
                                                                               .Contains("application/x-www-form-urlencoded")
-                        )
+                            )
                         {
                             Params.PostParamsType = PostType.x_www_form_urlencoded;
                         }
 
                         if (defaultHeaderAndKey[HttpRequestHeader.ContentType].ToLower()
                                                                               .Contains("multipart/form-data")
-                        )
+                            )
                         {
                             Params.PostParamsType = PostType.form_data;
                         }
 
                         if (defaultHeaderAndKey[HttpRequestHeader.ContentType].ToLower()
                                                                               .Contains("application/json")
-                        )
+                            )
                         {
                             Params.PostParamsType = PostType.json;
                         }
@@ -829,7 +912,7 @@ namespace PyLibSharp.Requests
             return await RequestBase(Url, HttpMethod.Post, Params, new CancellationTokenSource());
         }
 
-        public static async Task<ReqResponse> PostAsync(string Url, ReqParams Params,
+        public static async Task<ReqResponse> PostAsync(string                  Url, ReqParams Params,
                                                         CancellationTokenSource CancelFlag)
         {
             return await RequestBase(Url, HttpMethod.Post, Params, CancelFlag);
@@ -925,10 +1008,10 @@ namespace PyLibSharp.Requests
                     {
                         paramStr = (urlToSend.Query.StartsWith("?") ? urlToSend.Query : "?" + urlToSend.Query) +
                                    (urlToSend.Query.EndsWith("&")
-                                       ? ""
-                                       : ((urlToSend.Query != "" && urlToSend.Query != "?" && paramStr != "")
-                                           ? "&"
-                                           : ""))
+                                        ? ""
+                                        : ((urlToSend.Query != "" && urlToSend.Query != "?" && paramStr != "")
+                                               ? "&"
+                                               : ""))
                                  + paramStr;
                         urlParsed += ((urlToSend.AbsolutePath == "/" && !Url.EndsWith("/")) ? "/" : "") + paramStr;
                     }
@@ -1190,7 +1273,8 @@ namespace PyLibSharp.Requests
                 }
             }
 
-
+            bool _isGzipped  = false;
+            bool _isDeflated = false;
             try
             {
                 request.CookieContainer = Params.Cookies;
@@ -1242,10 +1326,10 @@ namespace PyLibSharp.Requests
                             Utils.HandleError(Params.UseHandler, ReqExceptionHandler, new
                                                   ReqResponseException("HTTP 状态码指示请求发生错误，状态为：" +
                                                                        (int) ((HttpWebResponse) ex
-                                                                           .Response).StatusCode +
-                                                                       " "                       +
+                                                                                     .Response).StatusCode +
+                                                                       " "                                 +
                                                                        ((HttpWebResponse) ex
-                                                                           .Response).StatusCode,
+                                                                               .Response).StatusCode,
                                                                        ErrorType
                                                                            .HTTPStatusCodeError),
                                               ErrorType.HTTPStatusCodeError);
@@ -1285,6 +1369,8 @@ namespace PyLibSharp.Requests
                                            false, Params.IsAutoCloseStream);
                 }
 
+                _isGzipped  = response.ContentEncoding.ToLower().Contains("gzip");
+                _isDeflated = response.ContentEncoding.ToLower().Contains("deflate");
                 //获取响应流
                 myResponseStream      = response.GetResponseStream();
                 responseContentLength = response.ContentLength;
@@ -1307,12 +1393,8 @@ namespace PyLibSharp.Requests
                 // }
 
                 //编码自动判断
-                if (response.ContentEncoding != "" && !(response.ContentEncoding is null))
-                {
-                    responseEncoding = Encoding.GetEncoding(response.ContentEncoding.ToLower());
-                }
-                else if (response.CharacterSet != "" && !(response.CharacterSet is null) &&
-                         response.ContentType.Contains("charset"))
+                if (response.CharacterSet != "" && !(response.CharacterSet is null) &&
+                    response.ContentType.Contains("charset"))
                 {
                     responseEncoding = Encoding.GetEncoding(response.CharacterSet.ToLower() ??
                                                             throw new ReqResponseException("请求无响应",
@@ -1344,7 +1426,8 @@ namespace PyLibSharp.Requests
             return new ReqResponse(request, myResponseStream, responseCookieContainer, responseContentType,
                                    responseContentLength,
                                    responseEncoding,
-                                   responseStatusCode, Params.IsUseHtmlMetaEncoding, Params.IsAutoCloseStream);
+                                   responseStatusCode, Params.IsUseHtmlMetaEncoding, Params.IsAutoCloseStream
+                                 , _isGzipped, _isDeflated, Params.IsAutoUnGzip, Params.IsAutoUnDeflate);
         }
     }
 }

@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
 using System.Net;
 using System.Reflection;
 using System.Text;
@@ -11,6 +13,50 @@ namespace PyLibSharp.Requests
 {
     public static class Utils
     {
+        public static string UnGzipFromStreamToString(Stream inputStream)
+        {
+            String ungzipped = "";
+            using (GZipStream stream = new GZipStream(inputStream, CompressionMode.Decompress))
+            {
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    ungzipped = reader.ReadToEnd();
+                }
+            }
+
+            return ungzipped;
+        }
+
+        public static string UnDeflateFromStreamToString(Stream inputStream)
+        {
+            String undeflated = "";
+            using (DeflateStream stream = new DeflateStream(inputStream, CompressionMode.Decompress))
+            {
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    undeflated = reader.ReadToEnd();
+                }
+            }
+
+            return undeflated;
+        }
+
+        public static void UnGzipFromStreamToStream(Stream inputStream, Stream outputStream)
+        {
+            using (GZipStream stream = new GZipStream(inputStream, CompressionMode.Decompress))
+            {
+                stream.CopyTo(outputStream);
+            }
+        }
+
+        public static void UnDeflateFromStreamToStream(Stream inputStream,Stream outputStream)
+        {
+            using (DeflateStream stream = new DeflateStream(inputStream, CompressionMode.Decompress))
+            {
+                stream.CopyTo(outputStream);
+            }
+        }
+
         /// <summary>
         /// 根据HTML头部中的meta标记来返回网页编码
         /// </summary>
@@ -71,7 +117,7 @@ namespace PyLibSharp.Requests
         /// <param name="handler">捕捉器</param>
         /// <param name="innerException">内部错误</param>
         /// <param name="errType">错误类型</param>
-        internal static void HandleError(bool useHandler, EventHandler<Requests.AggregateExceptionArgs> handler,
+        internal static void HandleError(bool      useHandler, EventHandler<Requests.AggregateExceptionArgs> handler,
                                          Exception innerException, ErrorType errType)
         {
             Debug.Print($"Requests库出现错误：({(useHandler ? "使用" : "未使用")}自定义错误捕捉器)" +

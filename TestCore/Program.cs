@@ -10,26 +10,9 @@ namespace TestCore
     {
         static void Main(string[] args)
         {
-            var body          = new MultipartFormDataContent();
-            var streamContent = new StreamContent(File.Open(@"D:\Temp\无标题.png", FileMode.Open));
-            body.Add(streamContent, "file","123.png");
             var req =
-                Requests.PostAsync("http://saucenao.com/search.php",
-                                   new ReqParams
-                                   {
-                                       Params = new Dictionary<string, string>()
-                                       {
-                                           {"api_key","92a805aff18cbc56c4723d7e2d5100c6892fe256" },
-                                           {"db","999" },
-                                           {"output_type","2" },
-                                           {"num_res","16" },
-                                       },
-                                       PostMultiPart  = body,
-                                       PostParamsType = PostType.form_data,
-                                       Timeout        = 10000
-                                   });
-
-            var res = req.Result.Json();
+                Requests.Get("https://b23.tv/PqTKNj");
+            var res = req;
             Console.WriteLine(res);
 
             // var str = Requests.Get("https://www.baidu.com", new ReqParams()
