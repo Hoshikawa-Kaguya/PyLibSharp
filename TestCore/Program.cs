@@ -1,17 +1,21 @@
 ﻿using PyLibSharp.Requests;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net.Http;
 
-namespace TestCore
+namespace TestCore6
 {
     class Program
     {
         static void Main(string[] args)
         {
             var req =
-                Requests.Get("https://b23.tv/PqTKNj");
+                Requests.Get("https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/space_history",new ReqParams()
+                                                     {
+                                                         Params =
+                                                         {
+                                                             {"host_uid","123"},
+                                                             {"offset_dynamic_id","1"}
+                                                         }
+                                                     });
             var res = req;
             Console.WriteLine(res);
 

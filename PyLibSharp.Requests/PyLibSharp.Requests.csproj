@@ -8,17 +8,17 @@ Requests库部分
 
 Use. Net to encapsulate some common functions according to the design idea of some Python libraries</Description>
     <Authors>xiaohe321</Authors>
-    <Version>1.2.9</Version>
+    <Version>1.2.10</Version>
     <Company />
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/xh321/PyLibSharp</PackageProjectUrl>
     <RepositoryUrl></RepositoryUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <NeutralLanguage>zh-CN</NeutralLanguage>
-    <PackageReleaseNotes>[Requests]增加了Gzip和Deflate压缩的支持，现可正确解析</PackageReleaseNotes>
+    <PackageReleaseNotes>[Requests]解决若HTTP返回头部不包含ContentEncoding情况下报null错误的问题</PackageReleaseNotes>
     <PackageTags>request network</PackageTags>
-    <AssemblyVersion>1.2.9.0</AssemblyVersion>
-    <FileVersion>1.2.9.0</FileVersion>
+    <AssemblyVersion>1.2.10.0</AssemblyVersion>
+    <FileVersion>1.2.10.0</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

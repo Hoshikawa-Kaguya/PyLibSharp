@@ -128,6 +128,16 @@
             设置并发连接数（建议1024以下）
             </summary>
         </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.IsAutoUnGzip">
+            <summary>
+            是否自动对返回流进行Gzip解压（若服务器表明其为Gzip压缩后传输的）
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqParams.IsAutoUnDeflate">
+            <summary>
+            是否自动对返回流进行Deflate解压（若服务器表明其为Deflate压缩后传输的）
+            </summary>
+        </member>
         <member name="T:PyLibSharp.Requests.PostType">
             <summary>
             设置当 Post 时数据的传输方式。
@@ -229,6 +239,38 @@
         <member name="P:PyLibSharp.Requests.ReqResponse.StatusCode">
             <summary>
             获取 HTTP 响应码。
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqResponse.IsGzipped">
+            <summary>
+            服务器响应流是否被Gzip压缩过
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqResponse.IsDeflated">
+            <summary>
+            服务器响应流是否被Deflate压缩过
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqResponse.IsCurrentGzipped">
+            <summary>
+            RawStream 当前是否被Gzip压缩过
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqResponse.IsCurrentDeflated">
+            <summary>
+            RawStream 当前是否被Deflate压缩过
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqResponse._isAutoUnGzip">
+            <summary>
+            是否自动对返回流进行Gzip解压（若服务器表明其为Gzip压缩后传输的）
+            <para>注意，仅对之后读取的RawStream有效，若已经读取过RawStream，则无效</para>
+            </summary>
+        </member>
+        <member name="P:PyLibSharp.Requests.ReqResponse._isAutoUnDeflate">
+            <summary>
+            是否自动对返回流进行Deflate解压（若服务器表明其为Deflate压缩后传输的）
+            <para>注意，仅对之后读取的RawStream有效，若已经读取过RawStream，则无效</para>
             </summary>
         </member>
         <member name="M:PyLibSharp.Requests.ReqResponse.Json">

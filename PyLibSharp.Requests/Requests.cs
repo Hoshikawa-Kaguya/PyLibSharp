@@ -4,7 +4,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -1369,8 +1368,8 @@ namespace PyLibSharp.Requests
                                            false, Params.IsAutoCloseStream);
                 }
 
-                _isGzipped  = response.ContentEncoding.ToLower().Contains("gzip");
-                _isDeflated = response.ContentEncoding.ToLower().Contains("deflate");
+                _isGzipped  = response?.ContentEncoding?.ToLower().Contains("gzip")    ?? false;
+                _isDeflated = response?.ContentEncoding?.ToLower().Contains("deflate") ?? false;
                 //获取响应流
                 myResponseStream      = response.GetResponseStream();
                 responseContentLength = response.ContentLength;
