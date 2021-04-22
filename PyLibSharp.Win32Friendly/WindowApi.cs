@@ -73,24 +73,24 @@ namespace PyLibSharp.Win32Friendly
 
             [DllImport("user32", SetLastError = true)]
             public static extern bool PostMessage(
-                IntPtr hWnd,
-                uint Msg,
-                int wParam,
-                int lParam
-            );
+                    IntPtr hWnd,
+                    uint   Msg,
+                    int    wParam,
+                    int    lParam
+                );
 
             [DllImport("user32.dll", EntryPoint = "SendMessageA", SetLastError = true)]
             public static extern int SendMessage(IntPtr hwnd, uint wMsg, int wParam, int lParam);
 
             [DllImport("user32.dll", SetLastError = true, EntryPoint = "GetWindowTextW", CharSet = CharSet.Unicode)]
-            public static extern int GetWindowText(IntPtr hWnd,
+            public static extern int GetWindowText(IntPtr                                          hWnd,
                                                    [MarshalAs(UnmanagedType.LPWStr)] StringBuilder lpString,
-                                                   int nMaxCount);
+                                                   int                                             nMaxCount);
 
             [DllImport("user32.dll", SetLastError = true, EntryPoint = "GetClassNameW", CharSet = CharSet.Unicode)]
-            public static extern int GetClassName(IntPtr hWnd,
+            public static extern int GetClassName(IntPtr                                          hWnd,
                                                   [MarshalAs(UnmanagedType.LPWStr)] StringBuilder lpString,
-                                                  int nMaxCount);
+                                                  int                                             nMaxCount);
 
             [DllImport("user32.dll", SetLastError = true)]
             public static extern IntPtr GetForegroundWindow();
@@ -112,7 +112,7 @@ namespace PyLibSharp.Win32Friendly
 
             [DllImport("user32.dll", SetLastError = true)]
             public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndlnsertAfter, int X, int Y, int cx, int cy,
-                                                   uint Flags);
+                                                   uint   Flags);
 
             public struct Rect
             {
@@ -153,12 +153,12 @@ namespace PyLibSharp.Win32Friendly
 
             private IntPtr _internalPtr;
 
-            public IntPtr Handler
+            public IntPtr Handle
             {
                 get => _internalPtr;
                 set
                 {
-                    if (ApiOptions.IsThrowErrorWhenHandlerIsNull &&
+                    if (ApiOptions.IsThrowErrorWhenHandleIsNull &&
                         value == IntPtr.Zero) throw new ArgumentNullException(nameof(value), "该句柄无效或未找到对应窗口");
 
                     try
@@ -203,19 +203,19 @@ namespace PyLibSharp.Win32Friendly
             public Win32Window(IntPtr hWnd, StringBuilder sbBuffer = null)
             {
                 initBuffer(sbBuffer);
-                Handler = hWnd;
+                Handle = hWnd;
             }
 
             public Win32Window(string sWindowText, StringBuilder sbBuffer = null)
             {
                 initBuffer(sbBuffer);
-                Handler = InternalApi.FindWindow(null, sWindowText);
+                Handle = InternalApi.FindWindow(null, sWindowText);
             }
 
             public Win32Window(string sWindowText, string sClassName, StringBuilder sbBuffer = null)
             {
                 initBuffer(sbBuffer);
-                Handler = InternalApi.FindWindow(sClassName, sWindowText);
+                Handle = InternalApi.FindWindow(sClassName, sWindowText);
             }
 
             public void Click(MouseButton btn = MouseButton.Left)
@@ -241,38 +241,38 @@ namespace PyLibSharp.Win32Friendly
                         break;
                 }
 
-                InternalApi.PostMessage(Handler, eMDown, 0x2, 1 + 1 * 65536);
-                InternalApi.PostMessage(Handler, eMClk, 0x1, 1  + 1 * 65536);
-                InternalApi.PostMessage(Handler, eMUp, 0x0, 1   + 1 * 65536);
+                InternalApi.PostMessage(Handle, eMDown, 0x2, 1 + 1 * 65536);
+                InternalApi.PostMessage(Handle, eMClk, 0x1, 1  + 1 * 65536);
+                InternalApi.PostMessage(Handle, eMUp, 0x0, 1   + 1 * 65536);
             }
 
             public void Close()
             {
-                InternalApi.PostMessage(Handler, InternalConst.WM_CLOSE, 0, 0);
+                InternalApi.PostMessage(Handle, InternalConst.WM_CLOSE, 0, 0);
             }
 
             public IEnumerator<Win32Window> GetEnumerator()
             {
                 //已经访问过的句柄，不再重复访问
-                List<IntPtr> lstVisitedHandlers = new List<IntPtr>();
+                List<IntPtr> lstVisitedHandles = new List<IntPtr>();
 
                 //先遍历一遍所有句柄，预筛选
-                InternalApi.EnumChildWindows(Handler, (h, l) =>
+                InternalApi.EnumChildWindows(Handle, (h, l) =>
                                                       {
                                                           //窗口不可见
                                                           if (ApiOptions.IsSkipInvisibleWindow &&
                                                               !InternalApi.IsWindowVisible(h)) return true;
 
                                                           //如果已经访问过，则看下一个
-                                                          if (lstVisitedHandlers.Contains(h)) return true;
-                                                          lstVisitedHandlers.Add(h);
+                                                          if (lstVisitedHandles.Contains(h)) return true;
+                                                          lstVisitedHandles.Add(h);
 
                                                           return true;
                                                       }, 0);
 
                 StringBuilder buffer = new StringBuilder(256);
                 //最后再次筛选，并获取对应属性
-                foreach (IntPtr hWnd in lstVisitedHandlers)
+                foreach (IntPtr hWnd in lstVisitedHandles)
                 {
                     Win32Window currentWindow = new Win32Window(hWnd, buffer);
 
@@ -295,10 +295,10 @@ namespace PyLibSharp.Win32Friendly
 
         public static class ApiOptions
         {
-            public static bool IsSkipEmptyWindowClass        { get; set; } = true;
-            public static bool IsSkipEmptyWindowText         { get; set; } = true;
-            public static bool IsSkipInvisibleWindow         { get; set; } = true;
-            public static bool IsThrowErrorWhenHandlerIsNull { get; set; } = true;
+            public static bool IsSkipEmptyWindowClass       { get; set; } = true;
+            public static bool IsSkipEmptyWindowText        { get; set; } = true;
+            public static bool IsSkipInvisibleWindow        { get; set; } = true;
+            public static bool IsThrowErrorWhenHandleIsNull { get; set; } = true;
         }
 
         /// <summary>
@@ -309,8 +309,8 @@ namespace PyLibSharp.Win32Friendly
         /// <param name="sClassName"></param>
         /// <returns></returns>
         public static Win32Window GetSubWindowByProps(this Win32Window wParent, string sWindowText = null,
-                                                      string sClassName = null)
-            => GetWindowByProps(wParent.Handler, sWindowText, sClassName);
+                                                      string           sClassName = null)
+            => GetWindowByProps(wParent.Handle, sWindowText, sClassName);
 
 
         /// <summary>
@@ -339,8 +339,8 @@ namespace PyLibSharp.Win32Friendly
         /// <param name="sClassName"></param>
         /// <returns></returns>
         public static IEnumerable<Win32Window> GetSubWindowsByProps(this Win32Window wParent, string sWindowText = null,
-                                                                    string sClassName = null)
-            => GetWindowsByProps(wParent.Handler, sWindowText, sClassName);
+                                                                    string           sClassName = null)
+            => GetWindowsByProps(wParent.Handle, sWindowText, sClassName);
 
 
         /// <summary>
